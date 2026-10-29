@@ -1,0 +1,32 @@
+# IDE and Editor files
+.idea/*
+!.idea/copyright/
+!.idea/codeInsightSettings.xml
+*.iml
+*.ipr
+*.iws
+.vscode/
+/.settings/
+
+# Build and Compiler caches
+/bin/
+/.gradle/
+/.gradle_home/
+/build/
+/.kotlin/
+
+# Runtime test files and logs
+/run/
+/mcef/
+/logs/
+/config/
+*.log
+
+# Large binary archives (>100MB exceeds GitHub push limits; distribute via GitHub Releases or Git LFS)
+/src/main/resources/resources/liquidbounce/cef/*.tar.gz
+*.jar
+*.tmp
+
+# System files
+.DS_Store
+Thumbs.db
