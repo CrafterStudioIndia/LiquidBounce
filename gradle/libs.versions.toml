@@ -45,7 +45,7 @@ waygl = "xN3H7oME"
 # https://kotlinlang.org/releases.html
 kotlin = "2.3.10"
 # https://central.sonatype.com/artifact/org.jetbrains.kotlinx/kotlinx-coroutines-test/overview
-kotlinx-coroutines = "1.10.2"
+kotlinx-coroutines = "1.11.0"
 # https://central.sonatype.com/artifact/org.jetbrains.kotlinx/atomicfu
 atomicfu = "0.31.0"
 # https://maven.fabricmc.net/net/fabricmc/fabric-language-kotlin/
