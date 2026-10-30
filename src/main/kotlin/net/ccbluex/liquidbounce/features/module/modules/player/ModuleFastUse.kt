@@ -62,7 +62,7 @@ object ModuleFastUse : ClientModule("FastUse", ModuleCategories.PLAYER, aliases 
      * from timer checks.
      *
      * AntiCheat: Grim (Tested 2.5.34), Vulcan, Vanilla
-     * Tested on: eu.loyisa.cn, anticheat-test.com
+     * Tested on: anticheat-test.com, anticheat-test.com
      * Usable Client version: 1.17-1.20.4
      * Usable Server version: >=1.8.9
      * A: Legacy servers depend on the clientside tickrate to calculate eating speed.

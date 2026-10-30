@@ -27,7 +27,7 @@ import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket
 /**
  * @anticheat Vulcan
  * @anticheatVersion 2.8.8
- * @testedOn eu.loyisa.cn
+ * @testedOn anticheat-test.com
  */
 internal object NoFallVulcanTP : NoFallMode("VulcanTP288") {
 

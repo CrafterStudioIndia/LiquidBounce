@@ -36,7 +36,7 @@ import net.minecraft.world.effect.MobEffects
 
 /**
  * author: @larryngton
- * tested on anticheat.test.com and eu.loyisa.cn
+ * tested on anticheat.test.com and anticheat-test.com
  * made for ncp, works on uncp and other anticheats by changing some options
  */
 class SpeedNCP(parent: ModeValueGroup<*>) : SpeedBHopBase("NCP", parent) {

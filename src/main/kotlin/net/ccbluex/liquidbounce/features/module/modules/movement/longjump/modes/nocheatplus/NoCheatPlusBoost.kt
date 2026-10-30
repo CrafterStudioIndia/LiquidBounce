@@ -32,7 +32,7 @@ import net.ccbluex.liquidbounce.utils.movement.stopXZVelocity
 /**
  * @anticheat NoCheatPlus
  * @anticheatVersion 3.16.1-SNAPSHOT-sMD5NET-b115s
- * @testedOn eu.loyisa.cn
+ * @testedOn anticheat-test.com
  */
 internal object NoCheatPlusBoost : Mode("NoCheatPlusBoost") {
     override val parent: ModeValueGroup<*>

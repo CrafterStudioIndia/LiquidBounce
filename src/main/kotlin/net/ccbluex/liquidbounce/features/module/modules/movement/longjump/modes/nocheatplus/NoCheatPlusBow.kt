@@ -39,7 +39,7 @@ import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket
 /**
  * @anticheat NoCheatPlus
  * @anticheatVersion 3.16.1-SNAPSHOT-sMD5NET-b115s
- * @testedOn eu.loyisa.cn
+ * @testedOn anticheat-test.com
  */
 
 internal object NoCheatPlusBow : Mode("NoCheatPlusBow") {

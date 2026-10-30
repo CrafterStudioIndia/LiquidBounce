@@ -37,7 +37,7 @@ import net.minecraft.world.phys.Vec3
 /**
  * @anticheat Vulcan
  * @anticheat Version 2.8.6
- * @testedOn eu.loyisa.cn, anticheat-test.com
+ * @testedOn anticheat-test.com, anticheat-test.com
  * @note Few seconds cooldown to not flag. Requires 1.8 serverside
  * @author Nullable
  */

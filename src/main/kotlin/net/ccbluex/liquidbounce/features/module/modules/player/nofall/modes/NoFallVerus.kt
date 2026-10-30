@@ -25,7 +25,7 @@ import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket
 /**
  * @anticheat Verus
  * @anticheatVersion b3896
- * @testedOn eu.loyisa.cn
+ * @testedOn anticheat-test.com
  */
 internal object NoFallVerus : NoFallMode("Verus") {
     val packetHandler = handler<PacketEvent> {

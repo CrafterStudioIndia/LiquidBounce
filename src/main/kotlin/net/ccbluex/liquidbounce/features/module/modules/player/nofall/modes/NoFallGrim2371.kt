@@ -28,7 +28,7 @@ import net.ccbluex.liquidbounce.event.until
 import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket
 
 /**
- * Bypassing GrimAC Anti Cheat (8/3/2025, Loyisa Server)
+ * Bypassing GrimAC Anti Cheat (8/3/2025, Test Server)
  * Minecraft Version 1.9+
  *
  * @author XeContrast

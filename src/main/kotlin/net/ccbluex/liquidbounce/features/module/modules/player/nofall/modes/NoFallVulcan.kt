@@ -25,7 +25,7 @@ import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket
 /**
  * @anticheat Vulcan
  * @anticheatVersion 2.7.7
- * @testedOn eu.loyisa.cn
+ * @testedOn anticheat-test.com
  */
 internal object NoFallVulcan : NoFallMode("Vulcan277") {
     val packetHandler = handler<PacketEvent> {

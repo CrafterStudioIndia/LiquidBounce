@@ -107,6 +107,21 @@ object HttpClient {
         val OCTET_STREAM = "application/octet-stream".toMediaType()
     }
 
+    private val BLOCKED_CHINA_PATTERNS = listOf(
+        ".cn", "loyisa", "aliyuncs", "baidupcs", "qq.com", "163.com", "bilibili", "littleskin", "blessingskin"
+    )
+
+    /**
+     * Interceptor rejecting any outbound connection to China (.cn domains or Chinese services).
+     */
+    private val noChinaInterceptor = Interceptor { chain ->
+        val host = chain.request().url.host.lowercase(Locale.ROOT)
+        if (BLOCKED_CHINA_PATTERNS.any { host.contains(it) }) {
+            throw IOException("Connections to China (.cn / Chinese hosts) are blocked: $host")
+        }
+        chain.proceed(chain.request())
+    }
+
     private val defaultClient = OkHttpClient.Builder()
         .dispatcher(Dispatcher(Util.nonCriticalIoPool().service))
         .connectTimeout(10, TimeUnit.SECONDS)
@@ -125,6 +140,7 @@ object HttpClient {
                 logger.error("Failed to initialize cache directory for HTTP client", e)
             }
         }
+        .addInterceptor(noChinaInterceptor)
         .addInterceptor(CacheBlacklistInterceptor(setOf("localhost", "127.0.0.1")))
         .addInterceptor(DefaultHeaderInterceptor("User-Agent", DEFAULT_AGENT, skipIfExists = true))
         .build().also {

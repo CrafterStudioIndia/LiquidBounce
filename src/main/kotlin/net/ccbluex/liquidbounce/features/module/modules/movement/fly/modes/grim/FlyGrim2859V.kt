@@ -34,7 +34,7 @@ import net.minecraft.world.phys.Vec3
 /**
  * @anticheat Grim
  * @anticheatVersion 2.3.59
- * @testedOn eu.loyisa.cn
+ * @testedOn anticheat-test.com
  * @note Slow on high ping
  */
 internal object FlyGrim2859V : Mode("Grim2859-V") {

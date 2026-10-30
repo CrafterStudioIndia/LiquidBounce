@@ -33,7 +33,7 @@ import net.minecraft.world.phys.shapes.Shapes
 /**
  * @anticheat Vulcan
  * @anticheatVersion V2.8.6
- * @testedOn anticheat-test.com, eu.loyisa.cn
+ * @testedOn anticheat-test.com, anticheat-test.com
  * @note flags on specific blocks such as fences
  */
 class SpeedVulcanGround286(parent: ModeValueGroup<*>) : SpeedBHopBase("VulcanGround286", parent) {

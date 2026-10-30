@@ -33,7 +33,7 @@ import net.minecraft.world.phys.Vec3
 /**
  * @anticheat Vulcan
  * @anticheatVersion 2.8.9
- * @testedOn anticheat-test.com, eu.loyisa.cn
+ * @testedOn anticheat-test.com, anticheat-test.com
  */
 internal object VulcanLongJump : Mode("Vulcan289") {
 

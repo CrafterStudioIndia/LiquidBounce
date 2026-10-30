@@ -55,7 +55,7 @@ object ModuleHighJump : ClientModule("HighJump", ModuleCategories.MOVEMENT) {
     /**
      * @anticheat Vulcan
      * @anticheatVersion 2.7.5
-     * @testedOn eu.loyisa.cn; eu.anticheat-test.com
+     * @testedOn anticheat-test.com; eu.anticheat-test.com
      * @note this still flags a bit
      */
     private object Vulcan : Mode("Vulcan") {

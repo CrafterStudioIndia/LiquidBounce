@@ -55,7 +55,7 @@ object ModuleFastBreak : ClientModule("FastBreak", ModuleCategories.WORLD) {
 
     /**
      * Bypass Grim 2.3.48 anti-cheat
-     * Tested on eu.loyisa.cn
+     * Tested on anticheat-test.com
      *
      * https://github.com/GrimAnticheat/Grim/issues/1296
      */

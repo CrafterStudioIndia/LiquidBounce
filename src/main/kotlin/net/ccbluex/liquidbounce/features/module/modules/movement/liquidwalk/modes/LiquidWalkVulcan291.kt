@@ -29,7 +29,7 @@ import net.ccbluex.liquidbounce.utils.kotlin.Priority
 /**
  * LiquidWalk Vulcan 2.8.5 - 2.9.1(+?)
  *
- * @tested eu.loyisa.cn
+ * @tested anticheat-test.com
  * @note May cause occasional step flags if player is in a 1x1 water hole.
  */
 internal object LiquidWalkVulcan291 : Mode("Vulcan291") {

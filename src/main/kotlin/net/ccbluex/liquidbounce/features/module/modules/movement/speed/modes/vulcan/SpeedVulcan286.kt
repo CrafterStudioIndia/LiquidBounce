@@ -32,7 +32,7 @@ import net.minecraft.world.effect.MobEffects
  * BHop Speed for Vulcan 286
  * Taken from InspectorBoat Vulcan Bypasses (He agreed to it)
  *
- * Tested on both anticheat-test.com and loyisa.cn
+ * Tested on both anticheat-test.com and anticheat-test.com
  */
 class SpeedVulcan286(parent: ModeValueGroup<*>) : SpeedBHopBase("Vulcan286", parent) {
 

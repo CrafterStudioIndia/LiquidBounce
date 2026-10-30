@@ -22,6 +22,7 @@ package net.ccbluex.liquidbounce.injection.mixins.minecraft.network;
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.mojang.authlib.GameProfile;
+import net.ccbluex.liquidbounce.cosmetics.CosmeticsEngine;
 import net.ccbluex.liquidbounce.features.misc.HideAppearance;
 import net.ccbluex.liquidbounce.features.module.modules.render.ModuleSkinChanger;
 import net.minecraft.client.Minecraft;
@@ -60,6 +61,13 @@ public abstract class MixinPlayerInfo {
                     }
                 }
             }
+        }
+
+        var client = Minecraft.getInstance();
+        boolean isLocal = client.player != null && profile.id().equals(client.player.getUUID());
+        PlayerSkin modified = CosmeticsEngine.getSkinForPlayer(profile.id(), isLocal, original);
+        if (modified != null) {
+            original = modified;
         }
 
         return original;

@@ -39,7 +39,7 @@ import net.minecraft.world.phys.shapes.Shapes
 /**
  * @anticheat NoCheatPlus
  * @anticheatVersion 3.16.1-SNAPSHOT-sMD5NET-b115s
- * @testedOn eu.loyisa.cn and poke.sexy
+ * @testedOn anticheat-test.com and poke.sexy
  */
 internal object LiquidWalkNoCheatPlus : Mode("NoCheatPlus") {
 

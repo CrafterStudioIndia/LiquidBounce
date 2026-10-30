@@ -30,7 +30,7 @@ import net.ccbluex.liquidbounce.features.module.modules.movement.spider.ModuleSp
  * Sneaking seems to reduce flags a bit for some reason.
  *
  * @anticheat Vulcan 2.8.8
- * @testedOn eu.loyisa.cn
+ * @testedOn anticheat-test.com
  * @see net.ccbluex.liquidbounce.features.module.modules.movement.spider.ModuleSpider
  *
  * TODO: Detection for how many blocks you've gone up. Anything over 40ish seems to flag for Invalid (C)

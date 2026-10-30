@@ -35,7 +35,7 @@ import net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket
 /**
  * @anticheat Matrix
  * @anticheatVersion 7.14.5
- * @testedOn mc.loyisa.cn
+ * @testedOn anticheat-test.com
  */
 internal object Matrix7145FlagLongJump : Mode("Matrix-7.14.5-Flag") {
 

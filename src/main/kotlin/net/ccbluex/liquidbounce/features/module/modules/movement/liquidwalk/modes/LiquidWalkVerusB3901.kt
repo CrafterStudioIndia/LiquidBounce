@@ -37,7 +37,7 @@ import net.minecraft.world.phys.shapes.Shapes
 /**
  * @anticheat Verus
  * @anticheatVersion b3901 and b3896
- * @testedOn anticheat-test.com and eu.loyisa.cn
+ * @testedOn anticheat-test.com and anticheat-test.com
  */
 internal object LiquidWalkVerusB3901 : Mode("VerusB3901") {
 

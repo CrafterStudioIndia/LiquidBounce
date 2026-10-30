@@ -35,7 +35,7 @@ import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket
 /**
  * @anticheat Verus
  * @anticheatVersion b3896
- * @testedOn eu.loyisa.cn
+ * @testedOn anticheat-test.com
  * @note it gives you ~2 flags for damage
  */
 internal object FlyVerusB3896Damage : Mode("VerusB3896Damage") {

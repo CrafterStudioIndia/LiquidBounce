@@ -35,7 +35,7 @@ import kotlin.math.abs
 
 /**
  * BHop Speed for Vulcan 288
- * Tested on both anticheat-test.com and loyisa.cn
+ * Tested on both anticheat-test.com and anticheat-test.com
  */
 class SpeedVulcan288(parent: ModeValueGroup<*>) : SpeedBHopBase("Vulcan288", parent) {
 

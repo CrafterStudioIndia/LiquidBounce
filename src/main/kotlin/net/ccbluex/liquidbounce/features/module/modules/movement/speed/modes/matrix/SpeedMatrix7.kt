@@ -28,7 +28,7 @@ import net.ccbluex.liquidbounce.utils.math.sq
 
 /**
  * bypassing matrix version > 7
- * testing in 6/23/25 at loyisa
+ * testing in 6/23/25 on test server
  *
  * @author XeContrast
  */

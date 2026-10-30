@@ -46,6 +46,7 @@
     "minecraft.client.option.MixinServerListAccessor",
     "minecraft.client.renderer.MixinMappableRingBuffer",
     "minecraft.entity.MixinAbstractClientPlayer",
+    "minecraft.entity.SkinMixin",
     "minecraft.entity.MixinAvatar",
     "minecraft.entity.MixinBeaconRenderer",
     "minecraft.entity.MixinCustomHeadLayer",

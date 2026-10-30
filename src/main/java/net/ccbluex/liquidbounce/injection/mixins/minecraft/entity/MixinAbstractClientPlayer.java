@@ -57,25 +57,4 @@ public abstract class MixinAbstractClientPlayer extends Player {
         }
         return original;
     }
-
-    @Inject(method = "getSkin", at = @At("TAIL"), cancellable = true)
-    private void injectCustomSkinTextures(CallbackInfoReturnable<PlayerSkin> cir) {
-        Minecraft client = Minecraft.getInstance();
-        if (client.level == null || client.player == null) return;
-
-        if (this.getUUID().equals(client.player.getUUID()) && ModuleSkinChanger.shouldApplyChanges()) {
-            var customSupplier = ModuleSkinChanger.INSTANCE.getSkinTextures();
-            if (customSupplier != null) {
-                PlayerSkin original = cir.getReturnValue();
-                PlayerSkin customTextures = customSupplier.get();
-                cir.setReturnValue(new PlayerSkin(
-                        customTextures.body(),
-                        original.cape(),
-                        customTextures.elytra(),
-                        customTextures.model(),
-                        customTextures.secure()
-                ));
-            }
-        }
-    }
 }

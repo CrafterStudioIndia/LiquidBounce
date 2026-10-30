@@ -39,7 +39,7 @@ import net.minecraft.world.phys.shapes.Shapes
 /**
  * @anticheat Vulcan
  * @anticheat Version 2.8.6
- * @testedOn eu.loyisa.cn, anticheat-test.com
+ * @testedOn anticheat-test.com, anticheat-test.com
  * @note ONLY WORKS ON 1.8 SERVERS
  * @author Nullable
  */
