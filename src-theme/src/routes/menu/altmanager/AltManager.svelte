@@ -30,6 +30,7 @@
         AccountManagerLoginEvent,
     } from "../../../integration/events.js";
     import DirectLoginModal from "./directLogin/DirectLoginModal.svelte";
+    import SkinSwitcherModal from "../skin/SkinSwitcherModal.svelte";
 
     let premiumOnly = false;
     let favoritesOnly = false;
@@ -40,6 +41,7 @@
 
     let addAccountModalVisible = false;
     let directLoginModalVisible = false;
+    let skinModalVisible = false;
 
     $: {
         let filteredAccounts = accounts;
@@ -118,6 +120,7 @@
 
 <DirectLoginModal bind:visible={directLoginModalVisible}/>
 <AddAccountModal bind:visible={addAccountModalVisible}/>
+<SkinSwitcherModal bind:visible={skinModalVisible}/>
 <Menu>
     <OptionBar>
         <Search on:search={handleSearch}/>
@@ -161,6 +164,7 @@
         <ButtonContainer>
             <IconTextButton icon="icon-plus-circle.svg" title="Add" on:click={() => addAccountModalVisible = true}/>
             <IconTextButton icon="icon-plane.svg" title="Direct" on:click={() => directLoginModalVisible = true}/>
+            <IconTextButton icon="icon-shirt.svg" title="Skins" on:click={() => skinModalVisible = true}/>
             <IconTextButton icon="icon-random.svg" disabled={renderedAccounts.length === 0} title="Random"
                             on:click={loginToRandomAccount}/>
             <IconTextButton icon="icon-refresh.svg" title="Restore" on:click={restoreSession}/>

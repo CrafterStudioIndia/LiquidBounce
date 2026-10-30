@@ -2,6 +2,7 @@
     import ClickGui from "./ClickGui.svelte";
     import GlobalSettings from "./tabs/GlobalSettings.svelte";
     import Tabs from "./tabs/Tabs.svelte";
+    import SkinSwitcherModal from "../menu/skin/SkinSwitcherModal.svelte";
     import {gridSize, os, scaleFactor, showGrid, snappingEnabled} from "./clickgui_store";
     import type {ConfigurableSetting, TogglableSetting} from "../../integration/types";
     import {onMount} from "svelte";
@@ -17,6 +18,7 @@
     let activeTab = $state(0);
     let minecraftScaleFactor = $state(2);
     let clickGuiScaleFactor = $state(1);
+    let skinModalVisible = $state(false);
 
     $effect(() => {
         $scaleFactor = minecraftScaleFactor * clickGuiScaleFactor;
@@ -67,7 +69,8 @@
     background-size: {$gridSize}px {$gridSize}px;
   "
 >
-    <Tabs {tabs} bind:activeTab/>
+    <Tabs {tabs} bind:activeTab onOpenCosmetics={() => skinModalVisible = true}/>
+    <SkinSwitcherModal bind:visible={skinModalVisible}/>
 </div>
 
 <style lang="scss">

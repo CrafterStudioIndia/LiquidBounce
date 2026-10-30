@@ -74,14 +74,42 @@ object CosmeticsEngine {
             val gameDir = mc.gameDirectory ?: File(".")
             val playerName = mc.user?.name
 
-            val searchDirs = listOf(
+            val home = System.getProperty("user.home") ?: ""
+            val searchDirs = mutableListOf(
                 File(gameDir, "skins"),
                 File(gameDir, "CustomSkinLoader/LocalSkin/skins")
             )
+            if (home.isNotEmpty()) {
+                searchDirs.add(File(home, ".config/liquidlauncher/skins"))
+                searchDirs.add(File(home, ".config/net.CCBlueX.LiquidLauncher/skins"))
+                searchDirs.add(File(home, ".local/share/liquidlauncher/skins"))
+                searchDirs.add(File(home, ".local/share/LiquidLauncher/skins"))
+                searchDirs.add(File(home, ".minecraft/skins"))
+            }
 
             val candidates = mutableListOf<File>()
             for (dir in searchDirs) {
                 if (dir.exists()) {
+                    // Check skins.json for active skin fileName
+                    val indexJson = File(dir, "skins.json")
+                    if (indexJson.isFile) {
+                        try {
+                            val root = JsonParser.parseString(indexJson.readText()).asJsonObject
+                            val array = root.getAsJsonArray("skins")
+                            if (array != null) {
+                                for (elem in array) {
+                                    val obj = elem.asJsonObject
+                                    if (obj.get("active")?.asBoolean == true) {
+                                        val fn = obj.get("fileName")?.asString
+                                        if (fn != null) {
+                                            candidates.add(File(dir, fn))
+                                        }
+                                    }
+                                }
+                            }
+                        } catch (_: Exception) {}
+                    }
+
                     candidates.add(File(dir, "$uuid.png"))
                     if (playerName != null) {
                         candidates.add(File(dir, "$playerName.png"))
@@ -145,6 +173,10 @@ object CosmeticsEngine {
                 logger.error("Failed to load local skin for $uuid from ${file.path}", e)
                 null
             }
+        }
+
+        fun clearCache() {
+            localSkinCache.clear()
         }
     }
 

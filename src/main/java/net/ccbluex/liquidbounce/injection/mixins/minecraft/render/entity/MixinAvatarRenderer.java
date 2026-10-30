@@ -21,30 +21,40 @@ package net.ccbluex.liquidbounce.injection.mixins.minecraft.render.entity;
 import com.llamalad7.mixinextras.injector.v2.WrapWithCondition;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.vertex.PoseStack;
+import net.ccbluex.liquidbounce.cosmetics.CosmeticsLayer;
 import net.ccbluex.liquidbounce.features.module.modules.combat.ModuleSwordBlock;
 import net.ccbluex.liquidbounce.features.module.modules.render.nametags.ModuleNametags;
+import net.ccbluex.liquidbounce.injection.mixins.minecraft.render.MixinLivingEntityRendererAccessor;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.minecraft.client.renderer.entity.layers.RenderLayer;
 import net.minecraft.client.renderer.entity.player.AvatarRenderer;
 import net.minecraft.client.renderer.entity.state.AvatarRenderState;
 import net.minecraft.client.renderer.state.CameraRenderState;
 import net.minecraft.network.chat.Component;
-import net.minecraft.tags.ItemTags;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Avatar;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.NullMarked;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @NullMarked
 @Mixin(AvatarRenderer.class)
 public abstract class MixinAvatarRenderer {
+
+    @Inject(method = "<init>", at = @At("RETURN"))
+    private void injectCosmeticsLayer(EntityRendererProvider.Context context, boolean useSlimModel, CallbackInfo ci) {
+        ((MixinLivingEntityRendererAccessor) this).callAddLayer(new CosmeticsLayer((AvatarRenderer<?>) (Object) this));
+    }
 
     @Inject(method = "getArmPose(Lnet/minecraft/world/entity/Avatar;Lnet/minecraft/world/item/ItemStack;Lnet/minecraft/world/InteractionHand;)Lnet/minecraft/client/model/HumanoidModel$ArmPose;", at = @At("HEAD"), cancellable = true)
     private static void injectArmPose(
@@ -72,5 +82,4 @@ public abstract class MixinAvatarRenderer {
     private boolean disableVanillaNametag(SubmitNodeCollector instance, PoseStack poseStack, Vec3 vec3, int i, Component component, boolean b, int j, double v, CameraRenderState cameraRenderState, @Local(argsOnly = true) AvatarRenderState state) {
         return ModuleNametags.INSTANCE.shouldRenderVanillaNametag(state);
     }
-
 }

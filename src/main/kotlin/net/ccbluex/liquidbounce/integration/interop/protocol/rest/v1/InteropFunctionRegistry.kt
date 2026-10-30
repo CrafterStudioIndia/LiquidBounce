@@ -30,6 +30,12 @@ import net.ccbluex.liquidbounce.integration.interop.protocol.rest.v1.client.dele
 import net.ccbluex.liquidbounce.integration.interop.protocol.rest.v1.client.deleteScreen
 import net.ccbluex.liquidbounce.integration.interop.protocol.rest.v1.client.generateName
 import net.ccbluex.liquidbounce.integration.interop.protocol.rest.v1.client.getAccounts
+import net.ccbluex.liquidbounce.integration.interop.protocol.rest.v1.client.getSkins
+import net.ccbluex.liquidbounce.integration.interop.protocol.rest.v1.client.getCosmetics
+import net.ccbluex.liquidbounce.integration.interop.protocol.rest.v1.client.setCosmetics
+import net.ccbluex.liquidbounce.integration.interop.protocol.rest.v1.client.selectSkin
+import net.ccbluex.liquidbounce.integration.interop.protocol.rest.v1.client.setSkinModel
+import net.ccbluex.liquidbounce.integration.interop.protocol.rest.v1.client.resetSkin
 import net.ccbluex.liquidbounce.integration.interop.protocol.rest.v1.client.getAllLocalStorage
 import net.ccbluex.liquidbounce.integration.interop.protocol.rest.v1.client.getClientInfo
 import net.ccbluex.liquidbounce.integration.interop.protocol.rest.v1.client.getComponents
@@ -188,6 +194,14 @@ internal fun Node.registerInteropFunctions() = withPath("/api/v1/client") {
     put("/account/favorite", ::putFavoriteAccount)
     delete("/account/favorite", ::deleteFavoriteAccount)
     post("/account/random-name", ::generateName)
+
+    // Skin & Cosmetics Functions
+    get("/skins", ::getSkins)
+    post("/skins/select", ::selectSkin)
+    post("/skins/model", ::setSkinModel)
+    post("/skins/reset", ::resetSkin)
+    get("/cosmetics", ::getCosmetics)
+    post("/cosmetics", ::setCosmetics)
 
     // Proxy Functions
     get("/proxy", ::getProxyInfo)

@@ -128,6 +128,7 @@
     "minecraft.render.MixinLightmap",
     "minecraft.render.MixinLightmapRenderStateExtractor",
     "minecraft.render.MixinLivingEntityRenderer",
+    "minecraft.render.MixinLivingEntityRendererAccessor",
     "minecraft.render.MixinMapRenderer",
     "minecraft.render.MixinOutlineBufferSource",
     "minecraft.render.MixinRenderSetup",

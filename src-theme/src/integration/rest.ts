@@ -756,3 +756,84 @@ export function itemTextureUrl(identifier: string) {
 export function effectTextureUrl(effectId: string) {
     return `${API_BASE}/client/resource/effectTexture?id=${effectId}`
 }
+
+export interface LocalSkinItem {
+    id: string;
+    name: string;
+    file: string;
+    model: string;
+}
+
+export interface LocalSkinState {
+    active: string;
+    model: string;
+    hasActive: boolean;
+    skins: LocalSkinItem[];
+}
+
+export async function getClientSkins(): Promise<LocalSkinState> {
+    const response = await fetch(`${API_BASE}/client/skins`);
+    return await response.json();
+}
+
+export async function selectClientSkin(file?: string, model?: string, base64?: string): Promise<void> {
+    await fetch(`${API_BASE}/client/skins/select`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ file, model, base64 })
+    });
+}
+
+export async function setClientSkinModel(model: string): Promise<void> {
+    await fetch(`${API_BASE}/client/skins/model`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ model })
+    });
+}
+
+export async function resetClientSkin(): Promise<void> {
+    await fetch(`${API_BASE}/client/skins/reset`, {
+        method: "POST"
+    });
+}
+
+export interface CosmeticConfig {
+    style: string;
+    primary: number;
+    secondary: number;
+    lift: number;
+    glow: number;
+}
+
+export interface ClientCosmeticsState {
+    aura: CosmeticConfig;
+    wings: CosmeticConfig;
+    headwear: CosmeticConfig;
+}
+
+export async function getClientCosmetics(): Promise<ClientCosmeticsState> {
+    const response = await fetch(`${API_BASE}/client/cosmetics`);
+    return await response.json();
+}
+
+export async function setClientCosmetic(
+    category: "aura" | "wings" | "headwear",
+    style: string,
+    primary?: number,
+    secondary?: number,
+    lift?: number,
+    glow?: number
+): Promise<void> {
+    await fetch(`${API_BASE}/client/cosmetics`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ category, style, primary, secondary, lift, glow })
+    });
+}

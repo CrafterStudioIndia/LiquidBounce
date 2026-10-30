@@ -19,11 +19,13 @@
     import RippleLoader from "../../RippleLoader.svelte";
     import {isLoggingIn} from "../../../altmanager/altmanager_store";
     import {isAnniversary} from "../../../../../util/utils";
+    import SkinSwitcherModal from "../../../skin/SkinSwitcherModal.svelte";
 
     let username = "";
     let service = "";
     let avatar = "";
     let online = true;
+    let skinModalVisible = false;
 
     let expanded = false;
     let accountElement: HTMLElement;
@@ -137,6 +139,11 @@
 
                 <img class="icon" src="img/menu/account/icon-random.svg" alt="random username">
             </button>
+            <button class="icon-button" type="button" on:click={() => skinModalVisible = true}>
+                <ToolTip text="Change skin"/>
+
+                <img class="icon" src="img/menu/account/icon-shirt.svg" alt="change skin">
+            </button>
             <button class="icon-button" disabled={inAccountManager} type="button"
                     on:click={() => openScreen("altmanager")}>
                 <ToolTip text="Change account"/>
@@ -145,6 +152,8 @@
             </button>
         </div>
     </div>
+
+    <SkinSwitcherModal bind:visible={skinModalVisible}/>
 
     {#if expanded}
         <div class="quick-switcher" transition:fade|global={{ duration: 200, easing: quintOut }}>
