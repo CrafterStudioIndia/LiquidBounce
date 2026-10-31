@@ -52,7 +52,7 @@ import net.minecraft.SharedConstants
  */
 object GlobalSettingsRichPresence : ToggleableValueGroup(
     name = "RichPresence",
-    enabled = true,
+    enabled = false,
     aliases = listOf("DiscordPresence")
 ) {
 
@@ -120,33 +120,7 @@ object GlobalSettingsRichPresence : ToggleableValueGroup(
     }
 
     private fun connectIpc() {
-        if (doNotTryToConnect || ipcClient?.status == PipeStatus.CONNECTED) {
-            return
-        }
-
-        runCatching {
-            ipcClient = IPCClient(IPC_APP_ID).also { it.connect() }
-        }.onFailure {
-            if (it is NoDiscordClientException) {
-                notification(
-                    title = "Discord RPC",
-                    message = "Please make sure you have Discord running.",
-                    severity = NotificationEvent.Severity.ERROR
-                )
-                logger.warn("No Discord client for RichPresence.")
-            } else {
-                notification(
-                    title = "Discord RPC",
-                    message = "Failed to initialize Discord RPC.",
-                    severity = NotificationEvent.Severity.ERROR
-                )
-                logger.error("Failed to connect to Discord RPC.", it)
-            }
-
-            doNotTryToConnect = true
-        }.onSuccess {
-            logger.info("Successfully connected to Discord RPC.")
-        }
+        return // Discord RPC removed from in-game
     }
 
     private fun shutdownIpc() {

@@ -56,6 +56,16 @@ public final class PlayerCosmeticTracker {
     }
 
     private static final Map<UUID, PlayerOutfit> REMOTE_PLAYER_OUTFITS = new ConcurrentHashMap<>();
+    private static final java.util.Set<UUID> REQUESTED = ConcurrentHashMap.newKeySet();
+
+    public interface RemoteOutfitFetcher {
+        void fetch(UUID playerId);
+    }
+    private static volatile RemoteOutfitFetcher fetcher = null;
+
+    public static void setFetcher(RemoteOutfitFetcher f) {
+        fetcher = f;
+    }
 
     private PlayerCosmeticTracker() {}
 
@@ -63,7 +73,16 @@ public final class PlayerCosmeticTracker {
         if (isSelf) {
             return PlayerWardrobe.getWornOutfit();
         }
-        return REMOTE_PLAYER_OUTFITS.getOrDefault(playerId, PlayerOutfit.EMPTY);
+        PlayerOutfit outfit = REMOTE_PLAYER_OUTFITS.get(playerId);
+        if (outfit == null) {
+            if (fetcher != null && REQUESTED.add(playerId)) {
+                try {
+                    fetcher.fetch(playerId);
+                } catch (Exception ignored) {}
+            }
+            return PlayerOutfit.EMPTY;
+        }
+        return outfit;
     }
 
     public static void updateRemotePlayer(UUID playerId, PlayerOutfit outfit) {

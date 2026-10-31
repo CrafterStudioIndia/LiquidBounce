@@ -837,3 +837,40 @@ export async function setClientCosmetic(
         body: JSON.stringify({ category, style, primary, secondary, lift, glow })
     });
 }
+
+export interface ClientCapesState {
+    activeCapeId: string;
+    hasActiveCape: boolean;
+    activeCapeFile: string;
+}
+
+export async function getClientCapes(): Promise<ClientCapesState> {
+    const response = await fetch(`${API_BASE}/client/capes`);
+    return await response.json();
+}
+
+export async function equipClientCape(capeId?: string, file?: string, base64?: string): Promise<{ message?: string }> {
+    const res = await fetch(`${API_BASE}/client/capes/equip`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ capeId, file, base64 })
+    });
+    if (res.ok && res.status !== 204) {
+        return await res.json();
+    }
+    return {};
+}
+
+export async function resetClientCape(): Promise<void> {
+    await fetch(`${API_BASE}/client/capes/reset`, {
+        method: "POST"
+    });
+}
+
+export async function openCapeArtStudio(): Promise<void> {
+    await fetch(`${API_BASE}/client/capes/open-editor`, {
+        method: "POST"
+    });
+}

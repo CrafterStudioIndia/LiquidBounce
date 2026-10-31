@@ -148,6 +148,17 @@ open class ClientModule(
         }
         calledSinceStartup = true
 
+        // Enforce server administration module restrictions
+        if (state && ModuleRestrictionManager.isModuleDisallowed(name)) {
+            notification(
+                translation("liquidbounce.generic.disabled"),
+                "$name is disabled by server administration",
+                NotificationEvent.Severity.DISABLED
+            )
+            chat("§c[LiquidSecurity] §fThe module '§e$name§f' has been disabled for your account by server administration.")
+            return false
+        }
+
         val state = super.onToggled(state)
 
         EventManager.callEvent(ModuleActivationEvent(name))

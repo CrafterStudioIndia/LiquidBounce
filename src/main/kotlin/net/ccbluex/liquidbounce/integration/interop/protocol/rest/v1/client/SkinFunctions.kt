@@ -271,3 +271,73 @@ fun setCosmetics(requestObject: RequestObject): FullHttpResponse {
     }
     return httpNoContent()
 }
+
+// GET /api/v1/client/capes
+@Suppress("UNUSED_PARAMETER")
+fun getClientCapes(requestObject: RequestObject): FullHttpResponse {
+    val dir = getSkinsDir()
+    val activeCapeFile = File(dir, "active_cape.png")
+    val activeCapeId = PlayerWardrobe.getCapeId()
+
+    val response = JsonObject().apply {
+        addProperty("activeCapeId", activeCapeId?.toString() ?: "")
+        addProperty("hasActiveCape", activeCapeId != null || (activeCapeFile.isFile && activeCapeFile.length() > 0))
+        addProperty("activeCapeFile", if (activeCapeFile.isFile) "active_cape.png" else "")
+    }
+    return httpOk(response)
+}
+
+// POST /api/v1/client/capes/equip
+fun equipClientCape(requestObject: RequestObject): FullHttpResponse {
+    data class EquipBody(val capeId: String?, val file: String?, val base64: String?)
+    val body = runCatching { requestObject.asJson<EquipBody>() }.getOrNull()
+        ?: return httpBadRequest("Invalid request body")
+
+    val dir = getSkinsDir()
+    val activeCapeFile = File(dir, "active_cape.png")
+
+    if (!body.capeId.isNullOrEmpty()) {
+        val numId = body.capeId.toIntOrNull()
+        PlayerWardrobe.setCapeId(numId)
+        CosmeticsEngine.equipPublishedCape(body.capeId)
+        return httpOk(JsonObject().apply {
+            addProperty("message", "Equipped cape ${body.capeId}")
+        })
+    } else if (!body.base64.isNullOrEmpty()) {
+        val clean = body.base64.substringAfter("base64,")
+        val bytes = Base64.getDecoder().decode(clean)
+        activeCapeFile.writeBytes(bytes)
+        PlayerWardrobe.setCapeId(null)
+        CosmeticsEngine.Library.clearCache()
+        return httpNoContent()
+    } else if (!body.file.isNullOrEmpty()) {
+        val src = File(body.file)
+        if (!src.isFile) return httpBadRequest("File not found")
+        Files.copy(src.toPath(), activeCapeFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
+        PlayerWardrobe.setCapeId(null)
+        CosmeticsEngine.Library.clearCache()
+        return httpNoContent()
+    }
+    return httpBadRequest("Missing capeId, file or base64")
+}
+
+// POST /api/v1/client/capes/reset
+@Suppress("UNUSED_PARAMETER")
+fun resetClientCape(requestObject: RequestObject): FullHttpResponse {
+    val dir = getSkinsDir()
+    File(dir, "active_cape.png").delete()
+    PlayerWardrobe.setCapeId(null)
+    CosmeticsEngine.Library.clearCache()
+    return httpNoContent()
+}
+
+// POST /api/v1/client/capes/open-editor
+@Suppress("UNUSED_PARAMETER")
+fun openCapeArtStudio(requestObject: RequestObject): FullHttpResponse {
+    val backendUrl = CosmeticsEngine.getBackendUrl()
+    val url = "$backendUrl/capes#editor"
+    runCatching {
+        net.minecraft.Util.getPlatform().openUri(java.net.URI(url))
+    }
+    return httpNoContent()
+}

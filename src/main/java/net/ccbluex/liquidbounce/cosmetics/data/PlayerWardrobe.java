@@ -108,9 +108,24 @@ public final class PlayerWardrobe {
             File temp = new File(file.getParentFile(), "cosmetics.json.tmp");
             Files.writeString(temp.toPath(), GSON.toJson(root), StandardCharsets.UTF_8);
             Files.move(temp.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+
+            if (changeListener != null) {
+                try {
+                    changeListener.onWardrobeChanged();
+                } catch (Exception ignored) {}
+            }
         } catch (Exception e) {
             System.err.println("Failed to save cosmetics.json: " + e.getMessage());
         }
+    }
+
+    public interface WardrobeChangeListener {
+        void onWardrobeChanged();
+    }
+    private static volatile WardrobeChangeListener changeListener = null;
+
+    public static void setChangeListener(WardrobeChangeListener listener) {
+        changeListener = listener;
     }
 
     public static void clear() {
@@ -156,6 +171,11 @@ public final class PlayerWardrobe {
     public static void setSkinInfo(String skinUrl, boolean isSlim) {
         activeSkinUrl = skinUrl;
         activeSkinSlim = isSlim;
+        if (changeListener != null) {
+            try {
+                changeListener.onWardrobeChanged();
+            } catch (Exception ignored) {}
+        }
     }
 
     public static void setHeadwear(OutfitConfig config) {

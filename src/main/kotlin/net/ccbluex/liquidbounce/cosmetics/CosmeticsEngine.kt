@@ -19,6 +19,7 @@
 
 package net.ccbluex.liquidbounce.cosmetics
 
+import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -26,6 +27,10 @@ import kotlinx.coroutines.withContext
 import net.ccbluex.liquidbounce.LiquidBounce
 import net.ccbluex.liquidbounce.api.core.HttpClient
 import net.ccbluex.liquidbounce.api.core.ioScope
+import net.ccbluex.liquidbounce.cosmetics.data.OutfitConfig
+import net.ccbluex.liquidbounce.cosmetics.data.PlayerCosmeticTracker
+import net.ccbluex.liquidbounce.cosmetics.data.PlayerWardrobe
+import net.ccbluex.liquidbounce.features.module.ModuleRestrictionManager
 import net.ccbluex.liquidbounce.utils.client.logger
 import net.ccbluex.liquidbounce.utils.kotlin.Minecraft
 import net.ccbluex.liquidbounce.utils.render.registerTexture
@@ -35,7 +40,13 @@ import net.minecraft.core.ClientAsset
 import net.minecraft.resources.Identifier
 import net.minecraft.world.entity.player.PlayerModelType
 import net.minecraft.world.entity.player.PlayerSkin
+import net.ccbluex.liquidbounce.event.EventListener
+import net.ccbluex.liquidbounce.event.EventManager
+import net.ccbluex.liquidbounce.event.newEventHook
+import net.ccbluex.liquidbounce.event.events.WorldChangeEvent
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
 import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
 import java.io.File
@@ -55,7 +66,7 @@ import javax.imageio.ImageIO
  *   and binds via [Platform.uploadSkin].
  * - Strict offline/privacy guard: blocks any connections to Chinese (.cn / mirror) hosts.
  */
-object CosmeticsEngine {
+object CosmeticsEngine : EventListener {
 
     class SkinTexture(private val identifier: Identifier) : ClientAsset.Texture {
         override fun id(): Identifier = identifier
@@ -199,7 +210,9 @@ object CosmeticsEngine {
 
         private val appearances = ConcurrentHashMap<UUID, PlayerAppearance>()
         val skinCache = ConcurrentHashMap<UUID, PlayerSkin>()
+        val capeCache = ConcurrentHashMap<UUID, ClientAsset.Texture>()
         private val pendingRequests = ConcurrentHashMap.newKeySet<UUID>()
+        private val pendingCapeRequests = ConcurrentHashMap.newKeySet<UUID>()
 
         fun of(uuid: UUID): PlayerAppearance {
             return appearances.computeIfAbsent(uuid) { PlayerAppearance(it) }
@@ -210,7 +223,8 @@ object CosmeticsEngine {
 
             ioScope.launch {
                 try {
-                    val bytes = Api.bytes(url)
+                    val resolvedUrl = if (url.startsWith("/")) "${getBackendUrl()}${url}" else url
+                    val bytes = Api.bytes(resolvedUrl)
                     if (bytes != null && bytes.isNotEmpty()) {
                         val identifier = LiquidBounce.identifier("skin-remote-${uuid.toString().take(8)}")
                         val uploaded = Platform.uploadSkin(identifier, bytes, model)
@@ -220,6 +234,26 @@ object CosmeticsEngine {
                     logger.warn("Failed to download or bind remote skin for $uuid from $url", e)
                 } finally {
                     pendingRequests.remove(uuid)
+                }
+            }
+        }
+
+        fun fetchRemoteCapeAsync(uuid: UUID, url: String) {
+            if (!pendingCapeRequests.add(uuid)) return
+
+            ioScope.launch {
+                try {
+                    val resolvedUrl = if (url.startsWith("/")) "${getBackendUrl()}${url}" else url
+                    val bytes = Api.bytes(resolvedUrl)
+                    if (bytes != null && bytes.isNotEmpty()) {
+                        val identifier = LiquidBounce.identifier("cape-remote-${uuid.toString().take(8)}")
+                        val uploaded = Platform.uploadCape(identifier, bytes)
+                        capeCache[uuid] = uploaded
+                    }
+                } catch (e: Exception) {
+                    logger.warn("Failed to download or bind remote cape for $uuid from $url", e)
+                } finally {
+                    pendingCapeRequests.remove(uuid)
                 }
             }
         }
@@ -397,6 +431,22 @@ object CosmeticsEngine {
                 false
             )
         }
+
+        fun uploadCape(
+            identifier: Identifier,
+            imageBytes: ByteArray
+        ): ClientAsset.Texture {
+            val buffered = ImageIO.read(ByteArrayInputStream(imageBytes))
+                ?: throw IOException("Invalid cape image data")
+
+            val nativeImage = buffered.toNativeImage()
+            val mc = Minecraft.getInstance()
+            mc.execute {
+                nativeImage.registerTexture(identifier)
+            }
+
+            return SkinTexture(identifier)
+        }
     }
 
     /**
@@ -406,27 +456,29 @@ object CosmeticsEngine {
     fun getSkinForPlayer(uuid: UUID, isLocal: Boolean, original: PlayerSkin): PlayerSkin {
         if (isLocal) {
             val localSkin = Library.loadLocalSkin(uuid)
-            if (localSkin != null) {
+            val localCape = Looks.capeCache[uuid]
+            if (localSkin != null || localCape != null) {
                 return PlayerSkin(
-                    localSkin.body(),
-                    original.cape(),
+                    localSkin?.body() ?: original.body(),
+                    localCape ?: original.cape(),
                     original.elytra(),
-                    localSkin.model(),
-                    localSkin.secure()
+                    localSkin?.model() ?: original.model(),
+                    localSkin?.secure() ?: original.secure()
                 )
             }
             return original
         }
 
         // Remote player
-        val cached = Looks.skinCache[uuid]
-        if (cached != null) {
+        val remoteSkin = Looks.skinCache[uuid]
+        val remoteCape = Looks.capeCache[uuid]
+        if (remoteSkin != null || remoteCape != null) {
             return PlayerSkin(
-                cached.body(),
-                original.cape(),
+                remoteSkin?.body() ?: original.body(),
+                remoteCape ?: original.cape(),
                 original.elytra(),
-                cached.model(),
-                cached.secure()
+                remoteSkin?.model() ?: original.model(),
+                remoteSkin?.secure() ?: original.secure()
             )
         }
 
@@ -437,5 +489,237 @@ object CosmeticsEngine {
         }
 
         return original
+    }
+
+    fun getBackendUrl(): String {
+        return System.getProperty("liquid.backend.url")
+            ?: System.getenv("LIQUID_BACKEND_URL")
+            ?: "https://liquid-backend.vercel.app"
+    }
+
+    init {
+        PlayerWardrobe.setChangeListener {
+            syncWardrobeToServer()
+        }
+        PlayerCosmeticTracker.setFetcher { uuid ->
+            queryRemotePlayerCosmetics(uuid)
+        }
+        EventManager.registerEventHook(
+            WorldChangeEvent::class.java,
+            newEventHook { event ->
+                if (event.world != null) {
+                    syncLocalPlayerWithServer()
+                }
+            }
+        )
+    }
+
+    /**
+     * Synchronizes local player's details, cosmetics, and server restrictions (disallowed modules, bans, admin status)
+     */
+    fun syncLocalPlayerWithServer() {
+        ioScope.launch {
+            try {
+                val mc = Minecraft.getInstance()
+                val user = mc.user ?: return@launch
+                val uuid = user.profileId ?: return@launch
+                val username = user.name ?: "Player"
+                val outfit = PlayerWardrobe.getWornOutfit()
+                val capeId = PlayerWardrobe.getCapeId()
+
+                // 1. Auto-upload local player skin so other players on server can see it
+                try {
+                    val skinFile = Library.active(uuid)
+                    if (skinFile != null && skinFile.isFile && skinFile.length() > 0) {
+                        val skinBytes = skinFile.readBytes()
+                        val model = Library.activeModel(skinFile)
+                        val isSlim = model == PlayerModelType.SLIM
+                        val uploadReq = Request.Builder()
+                            .url("${getBackendUrl()}/api/skin/${username}?model=${if (isSlim) "slim" else "classic"}")
+                            .post(skinBytes.toRequestBody("image/png".toMediaType()))
+                            .header("X-User-UUID", uuid.toString())
+                            .header("X-User-Name", username)
+                            .header("X-User-Model", if (isSlim) "slim" else "classic")
+                            .header("User-Agent", HttpClient.DEFAULT_AGENT)
+                            .build()
+                        HttpClient.client.newCall(uploadReq).execute().close()
+                    }
+                } catch (e: Exception) {
+                    logger.debug("Local skin auto-upload skipped: ${e.message}")
+                }
+
+                // Register & query player with backend server
+                val queryUrl = "${getBackendUrl()}/query.php?uuid=${uuid}&name=${username}"
+                val req = Request.Builder()
+                    .url(queryUrl)
+                    .get()
+                    .header("User-Agent", HttpClient.DEFAULT_AGENT)
+                    .build()
+
+                HttpClient.client.newCall(req).execute().use { res ->
+                    if (res.isSuccessful) {
+                        val bodyText = res.body.string()
+                        val json = JsonParser.parseString(bodyText).asJsonObject
+
+                        // Update module restrictions & ban status
+                        val isBanned = json.get("isBanned")?.asBoolean ?: false
+                        val isAdmin = json.get("isAdmin")?.asBoolean ?: false
+                        val disallowedList = mutableListOf<String>()
+                        val array = json.getAsJsonArray("disallowedModules")
+                        if (array != null) {
+                            for (item in array) {
+                                disallowedList.add(item.asString)
+                            }
+                        }
+                        ModuleRestrictionManager.updateServerRestrictions(disallowedList, isBanned, isAdmin)
+                        if (isAdmin) {
+                            logger.info("Local player $username has confirmed ADMIN status on server.")
+                        }
+
+                        // Load equipped cape if returned
+                        val srvCape = json.get("cape")?.takeIf { !it.isJsonNull }?.asString
+                        if (!srvCape.isNullOrEmpty()) {
+                            val resolvedCape = if (srvCape.startsWith("/")) "${getBackendUrl()}${srvCape}" else srvCape
+                            Looks.fetchRemoteCapeAsync(uuid, resolvedCape)
+                        }
+                    }
+                }
+
+                // Push current equipped cosmetics to server
+                val root = JsonObject().apply {
+                    addProperty("uuid", uuid.toString())
+                    addProperty("username", username)
+                    if (capeId != null) {
+                        addProperty("cape", capeId.toString())
+                    }
+                    if (!outfit.headwear.isEmpty) {
+                        addProperty("hat", outfit.headwear.styleId)
+                    }
+                    if (!outfit.wings.isEmpty) {
+                        addProperty("wings", outfit.wings.styleId)
+                    }
+                    if (!outfit.aura.isEmpty) {
+                        addProperty("aura", outfit.aura.styleId)
+                    }
+                    if (outfit.skinUrl != null) {
+                        addProperty("skin", outfit.skinUrl)
+                    }
+                    addProperty("slim", outfit.isSlimModel)
+                }
+
+                val body = root.toString().toRequestBody("application/json".toMediaType())
+                val postReq = Request.Builder()
+                    .url("${getBackendUrl()}/look.php")
+                    .post(body)
+                    .header("User-Agent", HttpClient.DEFAULT_AGENT)
+                    .build()
+
+                HttpClient.client.newCall(postReq).execute().use { res ->
+                    if (res.isSuccessful) {
+                        logger.info("Successfully registered player $username and cosmetics to server.")
+                    }
+                }
+            } catch (e: Exception) {
+                logger.warn("Could not sync local player with server: ${e.message}")
+            }
+        }
+    }
+
+    fun syncWardrobeToServer() {
+        syncLocalPlayerWithServer()
+    }
+
+    fun equipPublishedCape(capeId: String, callback: ((Boolean, String) -> Unit)? = null) {
+        ioScope.launch {
+            try {
+                val mc = Minecraft.getInstance()
+                val user = mc.user ?: return@launch
+                val username = user.name ?: "Player"
+                val uuid = user.profileId?.toString() ?: ""
+
+                val bodyJson = JsonObject().apply {
+                    addProperty("username", username)
+                    addProperty("uuid", uuid)
+                }
+                val body = bodyJson.toString().toRequestBody("application/json".toMediaType())
+                val req = Request.Builder()
+                    .url("${getBackendUrl()}/api/capes/${capeId}/equip")
+                    .post(body)
+                    .header("User-Agent", HttpClient.DEFAULT_AGENT)
+                    .build()
+
+                HttpClient.client.newCall(req).execute().use { res ->
+                    if (res.isSuccessful) {
+                        val respText = res.body.string()
+                        val json = JsonParser.parseString(respText).asJsonObject
+                        val capeUrl = json.get("cape")?.takeIf { !it.isJsonNull }?.asString
+                        if (!capeUrl.isNullOrEmpty()) {
+                            val resolvedCape = if (capeUrl.startsWith("/")) "${getBackendUrl()}${capeUrl}" else capeUrl
+                            user.profileId?.let { Looks.fetchRemoteCapeAsync(it, resolvedCape) }
+                        }
+                        withContext(Dispatchers.Main) {
+                            callback?.invoke(true, json.get("message")?.asString ?: "Equipped cape successfully")
+                        }
+                    } else {
+                        withContext(Dispatchers.Main) {
+                            callback?.invoke(false, "Server returned status ${res.code}")
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    callback?.invoke(false, e.message ?: "Unknown error")
+                }
+            }
+        }
+    }
+
+    fun queryRemotePlayerCosmetics(uuid: UUID, username: String? = null) {
+        ioScope.launch {
+            try {
+                val url = "${getBackendUrl()}/query.php?uuid=${uuid}" + (if (!username.isNullOrEmpty()) "&name=${username}" else "")
+                val request = Request.Builder()
+                    .url(url)
+                    .get()
+                    .header("User-Agent", HttpClient.DEFAULT_AGENT)
+                    .build()
+
+                HttpClient.client.newCall(request).execute().use { response ->
+                    if (!response.isSuccessful) return@use
+                    val bodyText = response.body.string()
+                    val json = JsonParser.parseString(bodyText).asJsonObject
+
+                    val headwearId = json.get("hat")?.takeIf { !it.isJsonNull }?.asString
+                    val wingsId = json.get("wings")?.takeIf { !it.isJsonNull }?.asString
+                    val auraId = json.get("aura")?.takeIf { !it.isJsonNull }?.asString
+                    val capeUrl = json.get("cape")?.takeIf { !it.isJsonNull }?.asString
+                    val skinUrl = json.get("skin")?.takeIf { !it.isJsonNull }?.asString
+                    val isSlim = json.get("slim")?.takeIf { !it.isJsonNull }?.asBoolean ?: false
+
+                    val outfit = PlayerCosmeticTracker.PlayerOutfit(
+                        if (!headwearId.isNullOrEmpty()) OutfitConfig(headwearId, 0, 0) else OutfitConfig.EMPTY,
+                        if (!wingsId.isNullOrEmpty()) OutfitConfig(wingsId, 0, 0) else OutfitConfig.EMPTY,
+                        if (!auraId.isNullOrEmpty()) OutfitConfig(auraId, 0, 0) else OutfitConfig.EMPTY,
+                        capeUrl,
+                        skinUrl,
+                        isSlim
+                    )
+                    PlayerCosmeticTracker.updateRemotePlayer(uuid, outfit)
+
+                    // Always resolve player skin (from backend custom skin, Mojang proxy, or default)
+                    val rawSkin = if (!skinUrl.isNullOrEmpty()) skinUrl else "/api/skin/${uuid}.png"
+                    val resolvedSkin = if (rawSkin.startsWith("/")) "${getBackendUrl()}${rawSkin}" else rawSkin
+                    Looks.of(uuid).setSkin(resolvedSkin, if (isSlim) PlayerModelType.SLIM else PlayerModelType.WIDE)
+                    Looks.fetchRemoteSkinAsync(uuid, resolvedSkin, if (isSlim) PlayerModelType.SLIM else PlayerModelType.WIDE)
+
+                    if (!capeUrl.isNullOrEmpty()) {
+                        val resolvedCape = if (capeUrl.startsWith("/")) "${getBackendUrl()}${capeUrl}" else capeUrl
+                        Looks.fetchRemoteCapeAsync(uuid, resolvedCape)
+                    }
+                }
+            } catch (e: Exception) {
+                logger.warn("Failed to query remote cosmetics for $uuid: ${e.message}")
+            }
+        }
     }
 }

@@ -27,6 +27,7 @@ import net.ccbluex.liquidbounce.config.types.group.ValueGroup
 import net.ccbluex.liquidbounce.features.command.CommandManager.getSubCommand
 import net.ccbluex.liquidbounce.features.command.commands.client.CommandBind
 import net.ccbluex.liquidbounce.features.command.commands.client.CommandBinds
+import net.ccbluex.liquidbounce.features.command.commands.client.CommandCapeArt
 import net.ccbluex.liquidbounce.features.command.commands.client.CommandClear
 import net.ccbluex.liquidbounce.features.command.commands.client.CommandConfig
 import net.ccbluex.liquidbounce.features.command.commands.client.CommandDebug
@@ -125,6 +126,7 @@ object CommandManager : Collection<Command> by commandSet {
             CommandFriend,
             CommandToggle,
             CommandBind,
+            CommandCapeArt,
             CommandCenter,
             CommandHelp,
             CommandBinds,

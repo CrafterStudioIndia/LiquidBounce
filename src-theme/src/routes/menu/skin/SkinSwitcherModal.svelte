@@ -7,18 +7,23 @@
         resetClientSkin,
         getClientCosmetics,
         setClientCosmetic,
+        getClientCapes,
+        equipClientCape,
+        resetClientCape,
+        openCapeArtStudio,
         getClientInfo,
         openFileDialog,
         type LocalSkinState,
         type LocalSkinItem,
-        type ClientCosmeticsState
+        type ClientCosmeticsState,
+        type ClientCapesState
     } from "../../../integration/rest";
     import { notification } from "../common/header/notification_store";
     import { onMount } from "svelte";
 
     export let visible: boolean = false;
 
-    let activeTab: "skins" | "cosmetics" = "skins";
+    let activeTab: "skins" | "cosmetics" | "capes" = "skins";
 
     let playerName: string = "Crafter_Studio";
 
@@ -28,6 +33,19 @@
         hasActive: false,
         skins: []
     };
+
+    let capesState: ClientCapesState = {
+        activeCapeId: "",
+        hasActiveCape: false,
+        activeCapeFile: ""
+    };
+
+    const CATALOG_CAPES = [
+        { id: "1", name: "Liquid Gold", desc: "Classic 64x32 gilded client cape with crest", resolution: "Standard 64x32", color: "#f5be23" },
+        { id: "2", name: "Cosmic Nebula", desc: "High Definition cosmic celestial interstellar cloak", resolution: "HD 128x64", color: "#8b5cf6" },
+        { id: "3", name: "Corvus Midnight", desc: "High Definition midnight covert raven plumage", resolution: "HD 128x64", color: "#38bdf8" },
+        { id: "4", name: "Emerald Matrix", desc: "High Definition cybernetic matrix crystal lattice", resolution: "HD 128x64", color: "#10b981" }
+    ];
 
     let cosmeticsState: ClientCosmeticsState = {
         aura: { style: "", primary: 0x9BE7FF, secondary: 0xFFFFFF, lift: 0, glow: 0.5 },
@@ -89,6 +107,98 @@
             cosmeticsState = await getClientCosmetics();
         } catch (e) {
             console.error("Failed to fetch cosmetics:", e);
+        }
+
+        try {
+            capesState = await getClientCapes();
+        } catch (e) {
+            console.error("Failed to fetch capes:", e);
+        }
+    }
+
+    async function handleEquipCape(capeId: string, capeName: string) {
+        loading = true;
+        try {
+            await equipClientCape(capeId);
+            await loadData();
+            notification.set({
+                title: "Cape Wardrobe",
+                message: `Equipped cape: ${capeName}`,
+                error: false
+            });
+        } catch (e) {
+            notification.set({
+                title: "Cape Wardrobe",
+                message: `Failed to equip cape: ${e}`,
+                error: true
+            });
+        } finally {
+            loading = false;
+        }
+    }
+
+    async function handleUploadCape() {
+        try {
+            const result = await openFileDialog({
+                mode: "SingleFile",
+                supportedExtensions: ["png"]
+            });
+            if (result && result.file) {
+                loading = true;
+                await equipClientCape(undefined, result.file);
+                await loadData();
+                notification.set({
+                    title: "Cape Wardrobe",
+                    message: "Custom cape uploaded and equipped successfully!",
+                    error: false
+                });
+            }
+        } catch (e) {
+            notification.set({
+                title: "Cape Wardrobe",
+                message: `Failed to open cape: ${e}`,
+                error: true
+            });
+        } finally {
+            loading = false;
+        }
+    }
+
+    async function handleResetCape() {
+        loading = true;
+        try {
+            await resetClientCape();
+            await loadData();
+            notification.set({
+                title: "Cape Wardrobe",
+                message: "Unequipped client cape",
+                error: false
+            });
+        } catch (e) {
+            notification.set({
+                title: "Cape Wardrobe",
+                message: `Failed to reset cape: ${e}`,
+                error: true
+            });
+        } finally {
+            loading = false;
+        }
+    }
+
+    async function handleOpenCapeArt() {
+        try {
+            await openCapeArtStudio();
+            notification.set({
+                title: "CapeArt Studio",
+                message: "Launched CapeArt Studio (HD Capes & 3D Flap Preview)",
+                error: false
+            });
+        } catch (e) {
+            notification.set({
+                title: "CapeArt Studio",
+                message: `Failed to open CapeArt Studio: ${e}`,
+                error: true
+            });
         }
     }
 
@@ -240,6 +350,16 @@
                 </svg>
                 Cosmetics & Auras
             </button>
+            <button
+                class="tab-pill"
+                class:active={activeTab === "capes"}
+                on:click={() => activeTab = "capes"}
+            >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                </svg>
+                CapeArt & Capes
+            </button>
         </div>
 
         {#if activeTab === "skins"}
@@ -319,7 +439,7 @@
                     </div>
                 {/if}
             </div>
-        {:else}
+        {:else if activeTab === "cosmetics"}
             <!-- Cosmetics Studio -->
             <div class="cosmetics-content">
                 <!-- Aura Section -->
@@ -387,6 +507,78 @@
                             </button>
                         {/each}
                     </div>
+                </div>
+            </div>
+        {:else if activeTab === "capes"}
+            <div class="capes-content">
+                <!-- User cape profile banner -->
+                <div class="profile-header">
+                    <div class="profile-title">{playerName}</div>
+                    <div class="profile-status">
+                        <span class="status-dot"></span>
+                        {#if capesState.hasActiveCape}
+                            <span>Cape Active: {capesState.activeCapeId ? `Catalog ID #${capesState.activeCapeId}` : "Custom Loaded Cape"}</span>
+                        {:else}
+                            <span>Vanilla / No Cape</span>
+                        {/if}
+                    </div>
+                </div>
+
+                <!-- Controls row: Launch CapeArt Studio | Upload Cape... | Reset -->
+                <div class="section-label">Studio & Management</div>
+                <div class="controls-bar">
+                    <button class="pill-btn editor-pill" on:click={handleOpenCapeArt}>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 20h9"/>
+                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                        </svg>
+                        🎨 Launch CapeArt Studio
+                    </button>
+
+                    <button class="pill-btn upload-pill" on:click={handleUploadCape} disabled={loading}>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="17 8 12 3 7 8"/>
+                            <line x1="12" y1="3" x2="12" y2="15"/>
+                        </svg>
+                        Upload Cape (.png)
+                    </button>
+
+                    <button class="pill-btn reset-pill" on:click={handleResetCape} disabled={loading || !capesState.hasActiveCape}>
+                        Reset
+                    </button>
+                </div>
+
+                <!-- Featured / Approved Capes Catalog -->
+                <div class="section-label">Reviewed & Approved Catalog ({CATALOG_CAPES.length})</div>
+                <div class="capes-grid">
+                    {#each CATALOG_CAPES as cape (cape.id)}
+                        <div class="cape-card" class:active={capesState.activeCapeId === cape.id}>
+                            <div class="cape-preview" style="background: radial-gradient(circle, {cape.color}33 0%, rgba(15, 23, 42, 0.8) 100%); border-color: {cape.color}66;">
+                                <div class="cape-silhouette" style="background: {cape.color};">
+                                    <div class="cape-crest"></div>
+                                </div>
+                            </div>
+                            <div class="cape-info">
+                                <div class="cape-header">
+                                    <span class="cape-title">{cape.name}</span>
+                                    <span class="cape-badge" style="border-color: {cape.color}; color: {cape.color};">{cape.resolution}</span>
+                                </div>
+                                <div class="cape-desc">{cape.desc}</div>
+                                <div class="cape-actions">
+                                    {#if capesState.activeCapeId === cape.id}
+                                        <button class="equip-btn active" disabled>
+                                            ✓ Equipped
+                                        </button>
+                                    {:else}
+                                        <button class="equip-btn" on:click={() => handleEquipCape(cape.id, cape.name)} disabled={loading}>
+                                            Equip Cape
+                                        </button>
+                                    {/if}
+                                </div>
+                            </div>
+                        </div>
+                    {/each}
                 </div>
             </div>
         {/if}
@@ -706,6 +898,164 @@
         .empty-hint {
             color: rgba(255, 255, 255, 0.4);
             font-size: 11px;
+        }
+    }
+    .editor-pill {
+        background: linear-gradient(135deg, rgba(139, 92, 246, 0.35) 0%, rgba(59, 130, 246, 0.35) 100%);
+        border: 1px solid rgba(139, 92, 246, 0.5);
+        color: #c4b5fd;
+        font-weight: 600;
+
+        &:hover {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.5) 0%, rgba(59, 130, 246, 0.5) 100%);
+            color: #ffffff;
+            box-shadow: 0 0 12px rgba(139, 92, 246, 0.4);
+        }
+    }
+
+    .capes-content {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        max-height: 400px;
+        overflow-y: auto;
+        padding-right: 4px;
+    }
+
+    .capes-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+
+    .cape-card {
+        display: flex;
+        gap: 12px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 10px;
+        padding: 10px;
+        transition: all 0.2s ease;
+
+        &:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.16);
+            transform: translateY(-1px);
+        }
+
+        &.active {
+            border-color: #3b82f6;
+            background: rgba(59, 130, 246, 0.12);
+            box-shadow: 0 0 12px rgba(59, 130, 246, 0.25);
+        }
+    }
+
+    .cape-preview {
+        width: 54px;
+        height: 80px;
+        border-radius: 6px;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .cape-silhouette {
+        width: 32px;
+        height: 52px;
+        border-radius: 4px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .cape-crest {
+        width: 10px;
+        height: 14px;
+        background: rgba(255, 255, 255, 0.85);
+        border-radius: 2px;
+    }
+
+    .cape-info {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        flex: 1;
+        gap: 4px;
+        min-width: 0;
+    }
+
+    .cape-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 4px;
+    }
+
+    .cape-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: #ffffff;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .cape-badge {
+        font-size: 9px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 2px 5px;
+        border-radius: 4px;
+        border: 1px solid;
+        flex-shrink: 0;
+    }
+
+    .cape-desc {
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.5);
+        line-height: 1.3;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .cape-actions {
+        margin-top: 4px;
+    }
+
+    .equip-btn {
+        width: 100%;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        color: #ffffff;
+        padding: 5px 10px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s ease;
+
+        &:hover:not(:disabled) {
+            background: #2563eb;
+            border-color: #3b82f6;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
+        }
+
+        &.active {
+            background: rgba(34, 197, 94, 0.2);
+            border-color: #22c55e;
+            color: #86efac;
+            cursor: default;
+        }
+
+        &:disabled {
+            opacity: 0.8;
         }
     }
 </style>

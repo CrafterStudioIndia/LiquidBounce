@@ -33,6 +33,10 @@ import net.ccbluex.liquidbounce.integration.interop.protocol.rest.v1.client.getA
 import net.ccbluex.liquidbounce.integration.interop.protocol.rest.v1.client.getSkins
 import net.ccbluex.liquidbounce.integration.interop.protocol.rest.v1.client.getCosmetics
 import net.ccbluex.liquidbounce.integration.interop.protocol.rest.v1.client.setCosmetics
+import net.ccbluex.liquidbounce.integration.interop.protocol.rest.v1.client.getClientCapes
+import net.ccbluex.liquidbounce.integration.interop.protocol.rest.v1.client.equipClientCape
+import net.ccbluex.liquidbounce.integration.interop.protocol.rest.v1.client.resetClientCape
+import net.ccbluex.liquidbounce.integration.interop.protocol.rest.v1.client.openCapeArtStudio
 import net.ccbluex.liquidbounce.integration.interop.protocol.rest.v1.client.selectSkin
 import net.ccbluex.liquidbounce.integration.interop.protocol.rest.v1.client.setSkinModel
 import net.ccbluex.liquidbounce.integration.interop.protocol.rest.v1.client.resetSkin
@@ -202,6 +206,10 @@ internal fun Node.registerInteropFunctions() = withPath("/api/v1/client") {
     post("/skins/reset", ::resetSkin)
     get("/cosmetics", ::getCosmetics)
     post("/cosmetics", ::setCosmetics)
+    get("/capes", ::getClientCapes)
+    post("/capes/equip", ::equipClientCape)
+    post("/capes/reset", ::resetClientCape)
+    post("/capes/open-editor", ::openCapeArtStudio)
 
     // Proxy Functions
     get("/proxy", ::getProxyInfo)
