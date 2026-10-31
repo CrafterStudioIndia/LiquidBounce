@@ -28,6 +28,7 @@ import io.netty.handler.codec.http.FullHttpResponse
 import net.ccbluex.liquidbounce.cosmetics.CosmeticsEngine
 import net.ccbluex.liquidbounce.cosmetics.data.OutfitConfig
 import net.ccbluex.liquidbounce.cosmetics.data.PlayerWardrobe
+import net.ccbluex.liquidbounce.utils.client.browseUrl
 import net.ccbluex.liquidbounce.utils.client.mc
 import net.ccbluex.netty.http.model.RequestObject
 import net.ccbluex.netty.http.util.httpBadRequest
@@ -183,6 +184,7 @@ fun selectSkin(requestObject: RequestObject): FullHttpResponse {
 
     activeMeta.writeText("{\"model\":\"$model\"}")
     CosmeticsEngine.Library.clearCache()
+    CosmeticsEngine.syncLocalPlayerWithServer()
     return httpNoContent()
 }
 
@@ -197,6 +199,7 @@ fun setSkinModel(requestObject: RequestObject): FullHttpResponse {
     val model = if (body.model.equals("slim", ignoreCase = true)) "slim" else "classic"
     activeMeta.writeText("{\"model\":\"$model\"}")
     CosmeticsEngine.Library.clearCache()
+    CosmeticsEngine.syncLocalPlayerWithServer()
     return httpNoContent()
 }
 
@@ -207,6 +210,7 @@ fun resetSkin(requestObject: RequestObject): FullHttpResponse {
     File(dir, "active.png").delete()
     File(dir, "active.json").delete()
     CosmeticsEngine.Library.clearCache()
+    CosmeticsEngine.syncLocalPlayerWithServer()
     return httpNoContent()
 }
 
@@ -300,6 +304,7 @@ fun equipClientCape(requestObject: RequestObject): FullHttpResponse {
         val numId = body.capeId.toIntOrNull()
         PlayerWardrobe.setCapeId(numId)
         CosmeticsEngine.equipPublishedCape(body.capeId)
+        CosmeticsEngine.syncLocalPlayerWithServer()
         return httpOk(JsonObject().apply {
             addProperty("message", "Equipped cape ${body.capeId}")
         })
@@ -309,14 +314,20 @@ fun equipClientCape(requestObject: RequestObject): FullHttpResponse {
         activeCapeFile.writeBytes(bytes)
         PlayerWardrobe.setCapeId(null)
         CosmeticsEngine.Library.clearCache()
-        return httpNoContent()
+        CosmeticsEngine.syncLocalPlayerWithServer()
+        return httpOk(JsonObject().apply {
+            addProperty("message", "Equipped custom cape")
+        })
     } else if (!body.file.isNullOrEmpty()) {
         val src = File(body.file)
         if (!src.isFile) return httpBadRequest("File not found")
         Files.copy(src.toPath(), activeCapeFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
         PlayerWardrobe.setCapeId(null)
         CosmeticsEngine.Library.clearCache()
-        return httpNoContent()
+        CosmeticsEngine.syncLocalPlayerWithServer()
+        return httpOk(JsonObject().apply {
+            addProperty("message", "Equipped cape file")
+        })
     }
     return httpBadRequest("Missing capeId, file or base64")
 }
@@ -328,6 +339,7 @@ fun resetClientCape(requestObject: RequestObject): FullHttpResponse {
     File(dir, "active_cape.png").delete()
     PlayerWardrobe.setCapeId(null)
     CosmeticsEngine.Library.clearCache()
+    CosmeticsEngine.syncLocalPlayerWithServer()
     return httpNoContent()
 }
 
@@ -337,7 +349,7 @@ fun openCapeArtStudio(requestObject: RequestObject): FullHttpResponse {
     val backendUrl = CosmeticsEngine.getBackendUrl()
     val url = "$backendUrl/capes#editor"
     runCatching {
-        net.minecraft.Util.getPlatform().openUri(java.net.URI(url))
+        browseUrl(url)
     }
     return httpNoContent()
 }

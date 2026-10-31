@@ -19,11 +19,12 @@
         type ClientCapesState
     } from "../../../integration/rest";
     import { notification } from "../common/header/notification_store";
+    import CapeArtStudio from "./CapeArtStudio.svelte";
     import { onMount } from "svelte";
 
     export let visible: boolean = false;
 
-    let activeTab: "skins" | "cosmetics" | "capes" = "skins";
+    let activeTab: "skins" | "cosmetics" | "capes" | "capeart" = "skins";
 
     let playerName: string = "Crafter_Studio";
 
@@ -185,21 +186,8 @@
         }
     }
 
-    async function handleOpenCapeArt() {
-        try {
-            await openCapeArtStudio();
-            notification.set({
-                title: "CapeArt Studio",
-                message: "Launched CapeArt Studio (HD Capes & 3D Flap Preview)",
-                error: false
-            });
-        } catch (e) {
-            notification.set({
-                title: "CapeArt Studio",
-                message: `Failed to open CapeArt Studio: ${e}`,
-                error: true
-            });
-        }
+    function handleOpenCapeArt() {
+        activeTab = "capeart";
     }
 
     $: if (visible) {
@@ -327,7 +315,7 @@
 </script>
 
 <Modal title="Studio & Wardrobe" bind:visible={visible}>
-    <div class="studio-wrapper">
+    <div class="studio-wrapper" class:wide={activeTab === "capeart"}>
         <!-- Studio Tab Switcher -->
         <div class="tabs-header">
             <button
@@ -358,7 +346,18 @@
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
                 </svg>
-                CapeArt & Capes
+                Cape Menu
+            </button>
+            <button
+                class="tab-pill"
+                class:active={activeTab === "capeart"}
+                on:click={() => activeTab = "capeart"}
+            >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 20h9"/>
+                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                </svg>
+                CapeArt Studio
             </button>
         </div>
 
@@ -581,6 +580,8 @@
                     {/each}
                 </div>
             </div>
+        {:else if activeTab === "capeart"}
+            <CapeArtStudio {playerName} on:equipped={loadData}/>
         {/if}
     </div>
 </Modal>
@@ -592,6 +593,12 @@
         gap: 16px;
         min-width: 520px;
         max-width: 600px;
+        transition: max-width 0.2s ease, min-width 0.2s ease;
+
+        &.wide {
+            min-width: 760px;
+            max-width: 820px;
+        }
     }
 
     .tabs-header {

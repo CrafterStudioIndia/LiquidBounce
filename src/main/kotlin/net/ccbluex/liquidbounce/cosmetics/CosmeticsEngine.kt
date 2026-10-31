@@ -42,8 +42,8 @@ import net.minecraft.world.entity.player.PlayerModelType
 import net.minecraft.world.entity.player.PlayerSkin
 import net.ccbluex.liquidbounce.event.EventListener
 import net.ccbluex.liquidbounce.event.EventManager
-import net.ccbluex.liquidbounce.event.newEventHook
 import net.ccbluex.liquidbounce.event.events.WorldChangeEvent
+import net.ccbluex.liquidbounce.event.handler
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -494,7 +494,7 @@ object CosmeticsEngine : EventListener {
     fun getBackendUrl(): String {
         return System.getProperty("liquid.backend.url")
             ?: System.getenv("LIQUID_BACKEND_URL")
-            ?: "https://liquid-backend.vercel.app"
+            ?: "http://localhost:3000"
     }
 
     init {
@@ -504,14 +504,11 @@ object CosmeticsEngine : EventListener {
         PlayerCosmeticTracker.setFetcher { uuid ->
             queryRemotePlayerCosmetics(uuid)
         }
-        EventManager.registerEventHook(
-            WorldChangeEvent::class.java,
-            newEventHook { event ->
-                if (event.world != null) {
-                    syncLocalPlayerWithServer()
-                }
+        handler<WorldChangeEvent> { event ->
+            if (event.world != null) {
+                syncLocalPlayerWithServer()
             }
-        )
+        }
     }
 
     /**
