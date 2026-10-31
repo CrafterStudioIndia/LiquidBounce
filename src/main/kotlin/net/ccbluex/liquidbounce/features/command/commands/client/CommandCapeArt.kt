@@ -99,7 +99,7 @@ object CommandCapeArt : Command.Factory {
         )
         .handler {
             val capeId = args[0] as String
-            chat(regular("Equipping cape #") + variable(capeId) + regular("..."))
+            chat(regular("Equipping cape #$capeId..."))
             CosmeticsEngine.equipPublishedCape(capeId) { success, msg ->
                 chat(regular(if (success) "Successfully equipped cape #$capeId!" else "Failed to equip cape: $msg"))
             }
@@ -132,7 +132,7 @@ object CommandCapeArt : Command.Factory {
                                 val creator = obj.get("creator_name")?.asString ?: "Community"
                                 val isHd = obj.get("is_hd")?.asBoolean == true
                                 val hdTag = if (isHd) "[HD] " else ""
-                                chat(regular("- #") + variable(id) + regular(" ") + variable("$hdTag$name") + regular(" by $creator (.capeart equip $id)"))
+                                chat(regular("- #$id $hdTag$name by $creator (.capeart equip $id)"))
                             }
                         } else {
                             chat(regular("Failed to fetch cape list: HTTP ${res.code}"))
