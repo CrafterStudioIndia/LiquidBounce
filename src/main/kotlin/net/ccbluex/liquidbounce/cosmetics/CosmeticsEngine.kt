@@ -33,6 +33,7 @@ import net.ccbluex.liquidbounce.cosmetics.data.PlayerWardrobe
 import net.ccbluex.liquidbounce.features.module.ModuleRestrictionManager
 import net.ccbluex.liquidbounce.utils.client.logger
 import net.ccbluex.liquidbounce.utils.kotlin.Minecraft
+import net.ccbluex.liquidbounce.utils.render.readNativeImage
 import net.ccbluex.liquidbounce.utils.render.registerTexture
 import net.ccbluex.liquidbounce.utils.render.toNativeImage
 import net.minecraft.client.Minecraft
@@ -111,12 +112,27 @@ object CosmeticsEngine : EventListener {
                                 for (elem in array) {
                                     val obj = elem.asJsonObject
                                     if (obj.get("active")?.asBoolean == true) {
+                                        val id = obj.get("id")?.asString
+                                        if (id.equals("steve", ignoreCase = true) || id.equals("alex", ignoreCase = true)) {
+                                            return null
+                                        }
                                         val fn = obj.get("fileName")?.asString
                                         if (fn != null) {
                                             candidates.add(File(dir, fn))
                                         }
                                     }
                                 }
+                            }
+                        } catch (_: Exception) {}
+                    }
+
+                    val activeMeta = File(dir, "active.json")
+                    if (activeMeta.isFile) {
+                        try {
+                            val metaObj = JsonParser.parseString(activeMeta.readText()).asJsonObject
+                            val id = metaObj.get("id")?.asString
+                            if (id.equals("steve", ignoreCase = true) || id.equals("alex", ignoreCase = true)) {
+                                return null
                             }
                         } catch (_: Exception) {}
                     }
@@ -416,7 +432,15 @@ object CosmeticsEngine : EventListener {
             val (processed, detectedModel) = processSkinImage(buffered)
             val finalModel = modelOverride ?: detectedModel
 
-            val nativeImage = processed.toNativeImage()
+            val nativeImage = try {
+                if (buffered.width == 64 && buffered.height == 64) {
+                    ByteArrayInputStream(imageBytes).readNativeImage()
+                } else {
+                    processed.toNativeImage()
+                }
+            } catch (_: Exception) {
+                processed.toNativeImage()
+            }
             val mc = Minecraft.getInstance()
             mc.execute {
                 nativeImage.registerTexture(identifier)
@@ -436,10 +460,13 @@ object CosmeticsEngine : EventListener {
             identifier: Identifier,
             imageBytes: ByteArray
         ): ClientAsset.Texture {
-            val buffered = ImageIO.read(ByteArrayInputStream(imageBytes))
-                ?: throw IOException("Invalid cape image data")
-
-            val nativeImage = buffered.toNativeImage()
+            val nativeImage = try {
+                ByteArrayInputStream(imageBytes).readNativeImage()
+            } catch (_: Exception) {
+                val buffered = ImageIO.read(ByteArrayInputStream(imageBytes))
+                    ?: throw IOException("Invalid cape image data")
+                buffered.toNativeImage()
+            }
             val mc = Minecraft.getInstance()
             mc.execute {
                 nativeImage.registerTexture(identifier)
@@ -703,11 +730,12 @@ object CosmeticsEngine : EventListener {
                     )
                     PlayerCosmeticTracker.updateRemotePlayer(uuid, outfit)
 
-                    // Always resolve player skin (from backend custom skin, Mojang proxy, or default)
-                    val rawSkin = if (!skinUrl.isNullOrEmpty()) skinUrl else "/api/skin/${uuid}.png"
-                    val resolvedSkin = if (rawSkin.startsWith("/")) "${getBackendUrl()}${rawSkin}" else rawSkin
-                    Looks.of(uuid).setSkin(resolvedSkin, if (isSlim) PlayerModelType.SLIM else PlayerModelType.WIDE)
-                    Looks.fetchRemoteSkinAsync(uuid, resolvedSkin, if (isSlim) PlayerModelType.SLIM else PlayerModelType.WIDE)
+                    // Only resolve and fetch player skin if a custom skin URL is provided by backend
+                    if (!skinUrl.isNullOrEmpty()) {
+                        val resolvedSkin = if (skinUrl.startsWith("/")) "${getBackendUrl()}${skinUrl}" else skinUrl
+                        Looks.of(uuid).setSkin(resolvedSkin, if (isSlim) PlayerModelType.SLIM else PlayerModelType.WIDE)
+                        Looks.fetchRemoteSkinAsync(uuid, resolvedSkin, if (isSlim) PlayerModelType.SLIM else PlayerModelType.WIDE)
+                    }
 
                     if (!capeUrl.isNullOrEmpty()) {
                         val resolvedCape = if (capeUrl.startsWith("/")) "${getBackendUrl()}${capeUrl}" else capeUrl
