@@ -494,7 +494,7 @@ object CosmeticsEngine : EventListener {
     fun getBackendUrl(): String {
         return System.getProperty("liquid.backend.url")
             ?: System.getenv("LIQUID_BACKEND_URL")
-            ?: "http://localhost:3000"
+            ?: "https://liquid-backend.vercel.app"
     }
 
     init {
