@@ -43,7 +43,6 @@ object CommandCapeArt : Command.Factory {
         return CommandBuilder
             .begin("capeart")
             .alias("cape", "capes")
-            .hub()
             .handler {
                 openCapeScreen()
             }
