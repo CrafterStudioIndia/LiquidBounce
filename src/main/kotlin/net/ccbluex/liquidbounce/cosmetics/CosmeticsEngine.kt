@@ -43,6 +43,7 @@ import net.minecraft.world.entity.player.PlayerModelType
 import net.minecraft.world.entity.player.PlayerSkin
 import net.ccbluex.liquidbounce.event.EventListener
 import net.ccbluex.liquidbounce.event.EventManager
+import net.ccbluex.liquidbounce.event.events.GameTickEvent
 import net.ccbluex.liquidbounce.event.events.WorldChangeEvent
 import net.ccbluex.liquidbounce.event.handler
 import okhttp3.MediaType.Companion.toMediaType
@@ -509,6 +510,20 @@ object CosmeticsEngine : EventListener {
             )
         }
 
+        // Query server for remote player cosmetics only if player is in level and within render distance
+        val mc = Minecraft.getInstance()
+        val local = mc.player
+        val level = mc.level
+        if (local != null && level != null) {
+            val targetEntity = level.getPlayerByUUID(uuid)
+            if (targetEntity != null) {
+                val renderDistanceBlocks = mc.options.renderDistance().get() * 16.0
+                if (local.distanceToSqr(targetEntity) <= renderDistanceBlocks * renderDistanceBlocks) {
+                    PlayerCosmeticTracker.query(uuid, false)
+                }
+            }
+        }
+
         val appearance = Looks.of(uuid)
         val skinUrl = appearance.skin()
         if (skinUrl != null) {
@@ -524,6 +539,8 @@ object CosmeticsEngine : EventListener {
             ?: "https://liquid-backend.vercel.app"
     }
 
+    private var lastRestrictionSync = 0L
+
     init {
         PlayerWardrobe.setChangeListener {
             syncWardrobeToServer()
@@ -533,6 +550,14 @@ object CosmeticsEngine : EventListener {
         }
         handler<WorldChangeEvent> { event ->
             if (event.world != null) {
+                syncLocalPlayerWithServer()
+            }
+        }
+        handler<GameTickEvent> {
+            val now = System.currentTimeMillis()
+            val mcInst = Minecraft.getInstance()
+            if (now - lastRestrictionSync > 20_000L && mcInst.player != null && mcInst.level != null) {
+                lastRestrictionSync = now
                 syncLocalPlayerWithServer()
             }
         }
@@ -699,6 +724,19 @@ object CosmeticsEngine : EventListener {
     }
 
     fun queryRemotePlayerCosmetics(uuid: UUID, username: String? = null) {
+        val mcInst = Minecraft.getInstance()
+        val local = mcInst.player
+        val level = mcInst.level
+
+        // Only query for players loaded in the current world within client's render distance
+        if (local != null && level != null && uuid != local.uuid) {
+            val targetEntity = level.getPlayerByUUID(uuid) ?: return
+            val renderDistanceBlocks = mcInst.options.renderDistance().get() * 16.0
+            if (local.distanceToSqr(targetEntity) > renderDistanceBlocks * renderDistanceBlocks) {
+                return
+            }
+        }
+
         ioScope.launch {
             try {
                 val url = "${getBackendUrl()}/query.php?uuid=${uuid}" + (if (!username.isNullOrEmpty()) "&name=${username}" else "")

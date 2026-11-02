@@ -39,7 +39,21 @@ object ModuleRestrictionManager {
     @JvmStatic
     fun isModuleDisallowed(moduleName: String): Boolean {
         if (isAccountBanned) return true
-        return disallowedModules.any { it.equals(moduleName, ignoreCase = true) }
+        if (disallowedModules.isEmpty()) return false
+
+        val cleanMod = moduleName.replace(" ", "").lowercase()
+        val targetModule = ModuleManager.find { it.name.equals(moduleName, ignoreCase = true) }
+
+        return disallowedModules.any { dis ->
+            val cleanDis = dis.replace(" ", "").lowercase()
+            cleanMod == cleanDis ||
+            (targetModule != null && (
+                targetModule.aliases.any { it.replace(" ", "").equals(cleanDis, ignoreCase = true) } ||
+                (cleanDis == "flight" && cleanMod == "fly") ||
+                (cleanDis == "fly" && cleanMod == "flight") ||
+                (cleanDis == "jesus" && cleanMod == "waterspeed")
+            ))
+        }
     }
 
     @JvmStatic
