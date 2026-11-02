@@ -182,7 +182,6 @@ import net.ccbluex.liquidbounce.features.module.modules.player.offhand.ModuleOff
 import net.ccbluex.liquidbounce.features.module.modules.render.ModuleAnimations
 import net.ccbluex.liquidbounce.features.module.modules.render.ModuleAntiBlind
 import net.ccbluex.liquidbounce.features.module.modules.render.ModuleAspect
-import net.ccbluex.liquidbounce.features.module.modules.render.ModuleAuraCosmetic
 import net.ccbluex.liquidbounce.features.module.modules.render.ModuleAutoF5
 import net.ccbluex.liquidbounce.features.module.modules.render.ModuleBedPlates
 import net.ccbluex.liquidbounce.features.module.modules.render.ModuleBetterInventory
@@ -666,7 +665,6 @@ object ModuleManager : EventListener, Collection<ClientModule> by modules {
             ModuleItemChams,
             ModuleCrystalView,
             ModuleSkinChanger,
-            ModuleAuraCosmetic,
             ModuleProtectionZones,
             ModuleCrosshair,
 
