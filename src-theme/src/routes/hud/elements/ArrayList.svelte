@@ -73,17 +73,25 @@
   @use "../../../colors.scss" as *;
 
   .module {
-    background-color: rgba($arraylist-base-color, 0.68);
+    background: rgba(15, 23, 42, 0.78);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     color: $arraylist-text-color;
-    font-size: 14px;
-    border-radius: 4px 0 0 4px;
-    padding: 5px 8px;
-    border-left: solid 4px $accent-color;
+    font-size: 13px;
+    border-radius: 6px 0 0 6px;
+    padding: 5px 10px;
+    border-left: 3px solid #3b82f6;
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
     width: max-content;
-    font-weight: 500;
+    font-weight: 600;
+    margin-bottom: 2px;
   }
 
   .tag {
-    color: $arraylist-tag-color;
+    color: #93c5fd;
+    font-weight: 500;
   }
 </style>

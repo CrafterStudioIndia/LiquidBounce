@@ -144,7 +144,7 @@
       transition: ease background-color 0.2s,
       ease color 0.2s;
 
-      color: $clickgui-text-dimmed-color;
+      color: rgba(226, 232, 240, 0.75);
       text-align: center;
       font-size: 12px;
       font-weight: 500;
@@ -158,22 +158,24 @@
         left: 0;
         width: calc(100% - 4px);
         height: calc(100% - 4px);
-        border: solid 2px $accent-color;
+        border: solid 2px #60a5fa;
       }
 
       &:hover {
-        background-color: rgba($clickgui-base-color, 0.85);
-        color: $clickgui-text-color;
+        background-color: rgba(59, 130, 246, 0.15);
+        color: #ffffff;
       }
 
       &.enabled {
-        color: $accent-color;
+        color: #60a5fa;
+        font-weight: 600;
+        text-shadow: 0 0 10px rgba(96, 165, 250, 0.4);
       }
     }
 
     .settings {
-      background-color: rgba($clickgui-base-color, 0.5);
-      border-left: solid 4px $accent-color;
+      background-color: rgba(8, 12, 24, 0.7);
+      border-left: solid 3px #6366f1;
       padding: 0 11px 0 7px;
     }
 

@@ -231,11 +231,14 @@
   @use "../../colors.scss" as *;
 
   .panel {
-    border-radius: 5px;
+    border-radius: 10px;
     width: 250px;
     position: absolute;
     overflow: hidden;
-    box-shadow: 0 0 10px rgba($clickgui-base-color, 0.5);
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08);
     will-change: transform;
     transition: none;
     user-select: none;
@@ -246,25 +249,26 @@
     grid-template-columns: max-content 1fr max-content;
     align-items: center;
     column-gap: 12px;
-    background-color: rgba($clickgui-base-color, 0.9);
-    border-bottom: solid 2px $accent-color;
+    background: rgba(15, 23, 42, 0.85);
+    border-bottom: 2px solid #3b82f6;
     padding: 10px 15px;
     cursor: grab;
 
     .category {
       font-size: 14px;
       color: $clickgui-text-color;
-      font-weight: 500;
+      font-weight: 600;
+      letter-spacing: 0.02em;
     }
   }
 
   .modules {
-    transition: max-height 300ms ease;
+    transition: max-height 300ms cubic-bezier(0.16, 1, 0.3, 1);
     scroll-behavior: smooth;
     max-height: 0;
     overflow-y: auto;
     overflow-x: hidden;
-    background-color: rgba($clickgui-base-color, 0.8);
+    background: rgba(10, 15, 29, 0.78);
 
     &.expanded {
       max-height: 545px;
