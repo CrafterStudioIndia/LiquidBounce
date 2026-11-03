@@ -73,7 +73,7 @@ open class ClientModule(
      * Note: This overwrites [ToggleableValueGroup] declaration of [running].
      */
     override val running: Boolean
-        get() = super<EventListener>.running && inGame && (enabled || notActivatable)
+        get() = super<EventListener>.running && inGame && (enabled || notActivatable) && !ModuleRestrictionManager.isModuleDisallowed(name)
 
     internal val bindValue = bind("Bind", InputBind(InputConstants.Type.KEYSYM, bind, bindAction))
         .doNotIncludeWhen { !AutoConfig.includeConfiguration.includeBinds }
@@ -144,21 +144,23 @@ open class ClientModule(
     open suspend fun enabledEffect() {}
 
     final override fun onToggled(state: Boolean): Boolean {
+        // Enforce server administration module restrictions unconditionally
+        if (state && ModuleRestrictionManager.isModuleDisallowed(name)) {
+            if (inGame) {
+                notification(
+                    translation("liquidbounce.generic.disabled"),
+                    "$name is disabled by server administration",
+                    NotificationEvent.Severity.DISABLED
+                )
+                chat("§c[LiquidSecurity] §fThe module '§e$name§f' has been disabled for your account by server administration.")
+            }
+            return false
+        }
+
         if (!inGame) {
             return state
         }
         calledSinceStartup = true
-
-        // Enforce server administration module restrictions
-        if (state && ModuleRestrictionManager.isModuleDisallowed(name)) {
-            notification(
-                translation("liquidbounce.generic.disabled"),
-                "$name is disabled by server administration",
-                NotificationEvent.Severity.DISABLED
-            )
-            chat("§c[LiquidSecurity] §fThe module '§e$name§f' has been disabled for your account by server administration.")
-            return false
-        }
 
         val state = super.onToggled(state)
 

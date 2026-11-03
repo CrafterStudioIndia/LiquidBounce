@@ -19,6 +19,8 @@
 
 package net.ccbluex.liquidbounce.features.module
 
+import net.ccbluex.liquidbounce.event.EventManager
+import net.ccbluex.liquidbounce.event.events.RefreshArrayListEvent
 import net.ccbluex.liquidbounce.utils.client.chat
 import net.ccbluex.liquidbounce.utils.client.logger
 import java.util.concurrent.ConcurrentHashMap
@@ -47,10 +49,14 @@ object ModuleRestrictionManager {
         return disallowedModules.any { dis ->
             val cleanDis = dis.replace(" ", "").lowercase()
             cleanMod == cleanDis ||
+            cleanMod.contains(cleanDis) ||
+            cleanDis.contains(cleanMod) ||
             (targetModule != null && (
                 targetModule.aliases.any { it.replace(" ", "").equals(cleanDis, ignoreCase = true) } ||
                 (cleanDis == "flight" && cleanMod == "fly") ||
                 (cleanDis == "fly" && cleanMod == "flight") ||
+                (cleanDis == "aura" && cleanMod == "killaura") ||
+                (cleanDis == "killaura" && cleanMod == "aura") ||
                 (cleanDis == "jesus" && cleanMod == "waterspeed")
             ))
         }
@@ -71,17 +77,21 @@ object ModuleRestrictionManager {
                     module.enabled = false
                 }
             }
+            EventManager.callEvent(RefreshArrayListEvent)
             return
         }
 
         if (disallowedModules.isNotEmpty()) {
             logger.info("Enforcing server module restrictions: $disallowedModules")
             for (module in ModuleManager) {
-                if (module.enabled && isModuleDisallowed(module.name)) {
-                    module.enabled = false
-                    chat("§c[LiquidSecurity] §fModule '§e${module.name}§f' has been automatically disabled by server administration.")
+                if (isModuleDisallowed(module.name)) {
+                    if (module.enabled) {
+                        module.enabled = false
+                        chat("§c[LiquidSecurity] §fModule '§e${module.name}§f' has been automatically disabled by server administration.")
+                    }
                 }
             }
+            EventManager.callEvent(RefreshArrayListEvent)
         }
     }
 

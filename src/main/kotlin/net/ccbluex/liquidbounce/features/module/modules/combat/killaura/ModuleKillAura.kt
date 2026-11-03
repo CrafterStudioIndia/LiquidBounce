@@ -81,7 +81,7 @@ import net.minecraft.world.item.ItemStack
  * Automatically attacks enemies.
  */
 @Suppress("MagicNumber")
-object ModuleKillAura : ClientModule("KillAura", ModuleCategories.COMBAT) {
+object ModuleKillAura : ClientModule("KillAura", ModuleCategories.COMBAT, aliases = listOf("Aura")) {
 
     // Attack speed
     val clicker = tree(KillAuraClicker)

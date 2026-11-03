@@ -243,7 +243,7 @@ object CosmeticsEngine : EventListener {
                     val resolvedUrl = if (url.startsWith("/")) "${getBackendUrl()}${url}" else url
                     val bytes = Api.bytes(resolvedUrl)
                     if (bytes != null && bytes.isNotEmpty()) {
-                        val identifier = LiquidBounce.identifier("skin-remote-${uuid.toString().take(8)}")
+                        val identifier = LiquidBounce.identifier("skin-remote-${uuid.toString().replace("-", "").lowercase()}")
                         val uploaded = Platform.uploadSkin(identifier, bytes, model)
                         skinCache[uuid] = uploaded
                     }
@@ -263,7 +263,7 @@ object CosmeticsEngine : EventListener {
                     val resolvedUrl = if (url.startsWith("/")) "${getBackendUrl()}${url}" else url
                     val bytes = Api.bytes(resolvedUrl)
                     if (bytes != null && bytes.isNotEmpty()) {
-                        val identifier = LiquidBounce.identifier("cape-remote-${uuid.toString().take(8)}")
+                        val identifier = LiquidBounce.identifier("cape-remote-${uuid.toString().replace("-", "").lowercase()}")
                         val uploaded = Platform.uploadCape(identifier, bytes)
                         capeCache[uuid] = uploaded
                     }
@@ -603,6 +603,8 @@ object CosmeticsEngine : EventListener {
                     .url(queryUrl)
                     .get()
                     .header("User-Agent", HttpClient.DEFAULT_AGENT)
+                    .header("Cache-Control", "no-cache")
+                    .header("Pragma", "no-cache")
                     .build()
 
                 HttpClient.client.newCall(req).execute().use { res ->
@@ -728,18 +730,20 @@ object CosmeticsEngine : EventListener {
         val local = mcInst.player
         val level = mcInst.level
 
-        // Only query for players loaded in the current world within client's render distance
-        if (local != null && level != null && uuid != local.uuid) {
-            val targetEntity = level.getPlayerByUUID(uuid) ?: return
+        val targetEntity = level?.getPlayerByUUID(uuid)
+        // If player is in the current world, enforce render distance
+        if (local != null && targetEntity != null && uuid != local.uuid) {
             val renderDistanceBlocks = mcInst.options.renderDistance().get() * 16.0
             if (local.distanceToSqr(targetEntity) > renderDistanceBlocks * renderDistanceBlocks) {
                 return
             }
         }
 
+        val resolvedName = username ?: targetEntity?.gameProfile?.name
+
         ioScope.launch {
             try {
-                val url = "${getBackendUrl()}/query.php?uuid=${uuid}" + (if (!username.isNullOrEmpty()) "&name=${username}" else "")
+                val url = "${getBackendUrl()}/query.php?uuid=${uuid}" + (if (!resolvedName.isNullOrEmpty()) "&name=${resolvedName}" else "")
                 val request = Request.Builder()
                     .url(url)
                     .get()

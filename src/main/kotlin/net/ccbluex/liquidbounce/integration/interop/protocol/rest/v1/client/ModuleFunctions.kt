@@ -30,6 +30,7 @@ import net.ccbluex.liquidbounce.config.gson.interopGson
 import net.ccbluex.liquidbounce.features.module.ClientModule
 import net.ccbluex.liquidbounce.features.module.ModuleCategories
 import net.ccbluex.liquidbounce.features.module.ModuleManager
+import net.ccbluex.liquidbounce.features.module.ModuleRestrictionManager
 import net.ccbluex.liquidbounce.features.module.ModuleManager.modulesConfig
 import net.ccbluex.liquidbounce.utils.client.logger
 import net.ccbluex.liquidbounce.utils.kotlin.Minecraft
@@ -127,6 +128,10 @@ private data class ModuleRequest(val name: String) {
 
         if (module.enabled == supposedNew) {
             return httpForbidden("$name already ${if (supposedNew) "enabled" else "disabled"}")
+        }
+
+        if (supposedNew && ModuleRestrictionManager.isModuleDisallowed(module.name)) {
+            return httpForbidden("$name is disabled by server administration")
         }
 
         withContext(Dispatchers.Minecraft) {
