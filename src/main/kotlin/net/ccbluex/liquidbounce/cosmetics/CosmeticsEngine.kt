@@ -81,6 +81,10 @@ object CosmeticsEngine : EventListener {
     object Library {
 
         private val localSkinCache = ConcurrentHashMap<String, PlayerSkin>()
+        private var cachedLocalSkin: PlayerSkin? = null
+        private var lastLocalCheck: Long = 0L
+        private var cachedFileLastModified: Long = 0L
+        private var cachedFilePath: String = ""
 
         fun active(uuid: UUID): File? {
             val mc = Minecraft.getInstance()
@@ -186,9 +190,32 @@ object CosmeticsEngine : EventListener {
         }
 
         fun loadLocalSkin(uuid: UUID): PlayerSkin? {
-            val file = active(uuid) ?: return null
-            val cacheKey = "${file.absolutePath}:${file.lastModified()}"
-            localSkinCache[cacheKey]?.let { return it }
+            val now = System.currentTimeMillis()
+            if (now - lastLocalCheck < 3000L && cachedLocalSkin != null) {
+                return cachedLocalSkin
+            }
+            lastLocalCheck = now
+
+            val file = active(uuid)
+            if (file == null) {
+                cachedLocalSkin = null
+                return null
+            }
+
+            val mod = file.lastModified()
+            val path = file.absolutePath
+            if (path == cachedFilePath && mod == cachedFileLastModified && cachedLocalSkin != null) {
+                return cachedLocalSkin
+            }
+
+            val cacheKey = "${path}:${mod}"
+            val existing = localSkinCache[cacheKey]
+            if (existing != null) {
+                cachedLocalSkin = existing
+                cachedFilePath = path
+                cachedFileLastModified = mod
+                return existing
+            }
 
             return try {
                 val bytes = file.readBytes()
@@ -196,6 +223,9 @@ object CosmeticsEngine : EventListener {
                 val identifier = LiquidBounce.identifier("skin-local-${uuid.toString().take(8)}")
                 val skin = Platform.uploadSkin(identifier, bytes, modelType)
                 localSkinCache[cacheKey] = skin
+                cachedLocalSkin = skin
+                cachedFilePath = path
+                cachedFileLastModified = mod
                 skin
             } catch (e: Exception) {
                 logger.error("Failed to load local skin for $uuid from ${file.path}", e)
@@ -205,6 +235,8 @@ object CosmeticsEngine : EventListener {
 
         fun clearCache() {
             localSkinCache.clear()
+            cachedLocalSkin = null
+            lastLocalCheck = 0L
         }
     }
 
@@ -477,6 +509,9 @@ object CosmeticsEngine : EventListener {
         }
     }
 
+    private val remoteQueryThrottle = ConcurrentHashMap<UUID, Long>()
+    private var lastUploadedSkinBytesHash = 0
+
     /**
      * Intercepts `getSkin()` for local player or remote player.
      */
@@ -497,7 +532,7 @@ object CosmeticsEngine : EventListener {
             return original
         }
 
-        // Remote player
+        // Remote player - ultra-fast in-memory cache lookup
         val remoteSkin = Looks.skinCache[uuid]
         val remoteCape = Looks.capeCache[uuid]
         if (remoteSkin != null || remoteCape != null) {
@@ -510,24 +545,19 @@ object CosmeticsEngine : EventListener {
             )
         }
 
-        // Query server for remote player cosmetics only if player is in level and within render distance
-        val mc = Minecraft.getInstance()
-        val local = mc.player
-        val level = mc.level
-        if (local != null && level != null) {
-            val targetEntity = level.getPlayerByUUID(uuid)
-            if (targetEntity != null) {
-                val renderDistanceBlocks = mc.options.renderDistance().get() * 16.0
-                if (local.distanceToSqr(targetEntity) <= renderDistanceBlocks * renderDistanceBlocks) {
-                    PlayerCosmeticTracker.query(uuid, false)
+        // Throttle remote lookups to once every 25 seconds per player entity (non-blocking)
+        val now = System.currentTimeMillis()
+        val lastQuery = remoteQueryThrottle[uuid] ?: 0L
+        if (now - lastQuery > 25_000L) {
+            remoteQueryThrottle[uuid] = now
+            ioScope.launch {
+                PlayerCosmeticTracker.query(uuid, false)
+                val appearance = Looks.of(uuid)
+                val skinUrl = appearance.skin()
+                if (skinUrl != null) {
+                    Looks.fetchRemoteSkinAsync(uuid, skinUrl, appearance.model())
                 }
             }
-        }
-
-        val appearance = Looks.of(uuid)
-        val skinUrl = appearance.skin()
-        if (skinUrl != null) {
-            Looks.fetchRemoteSkinAsync(uuid, skinUrl, appearance.model())
         }
 
         return original
@@ -576,22 +606,27 @@ object CosmeticsEngine : EventListener {
                 val outfit = PlayerWardrobe.getWornOutfit()
                 val capeId = PlayerWardrobe.getCapeId()
 
-                // 1. Auto-upload local player skin so other players on server can see it
+                // 1. Auto-upload local player skin so other players on server can see it (only when changed)
                 try {
                     val skinFile = Library.active(uuid)
                     if (skinFile != null && skinFile.isFile && skinFile.length() > 0) {
                         val skinBytes = skinFile.readBytes()
-                        val model = Library.activeModel(skinFile)
-                        val isSlim = model == PlayerModelType.SLIM
-                        val uploadReq = Request.Builder()
-                            .url("${getBackendUrl()}/api/skin/${username}?model=${if (isSlim) "slim" else "classic"}")
-                            .post(skinBytes.toRequestBody("image/png".toMediaType()))
-                            .header("X-User-UUID", uuid.toString())
-                            .header("X-User-Name", username)
-                            .header("X-User-Model", if (isSlim) "slim" else "classic")
-                            .header("User-Agent", HttpClient.DEFAULT_AGENT)
-                            .build()
-                        HttpClient.client.newCall(uploadReq).execute().close()
+                        val bytesHash = skinBytes.contentHashCode()
+                        if (bytesHash != lastUploadedSkinBytesHash) {
+                            val model = Library.activeModel(skinFile)
+                            val isSlim = model == PlayerModelType.SLIM
+                            val uploadReq = Request.Builder()
+                                .url("${getBackendUrl()}/api/skin/${username}?model=${if (isSlim) "slim" else "classic"}")
+                                .post(skinBytes.toRequestBody("image/png".toMediaType()))
+                                .header("X-User-UUID", uuid.toString())
+                                .header("X-User-Name", username)
+                                .header("X-User-Model", if (isSlim) "slim" else "classic")
+                                .header("User-Agent", HttpClient.DEFAULT_AGENT)
+                                .build()
+                            HttpClient.client.newCall(uploadReq).execute().close()
+                            lastUploadedSkinBytesHash = bytesHash
+                            logger.info("Local skin synchronized with backend server for player $username.")
+                        }
                     }
                 } catch (e: Exception) {
                     logger.debug("Local skin auto-upload skipped: ${e.message}")

@@ -33,6 +33,7 @@ import java.util.concurrent.ConcurrentHashMap
 object ModuleRestrictionManager {
 
     private val disallowedModules = ConcurrentHashMap.newKeySet<String>()
+    private val checkCache = ConcurrentHashMap<String, Boolean>()
     var isAccountBanned: Boolean = false
         private set
     var isAccountAdmin: Boolean = false
@@ -43,22 +44,24 @@ object ModuleRestrictionManager {
         if (isAccountBanned) return true
         if (disallowedModules.isEmpty()) return false
 
-        val cleanMod = moduleName.replace(" ", "").lowercase()
-        val targetModule = ModuleManager.find { it.name.equals(moduleName, ignoreCase = true) }
+        return checkCache.computeIfAbsent(moduleName) { name ->
+            val cleanMod = name.replace(" ", "").lowercase()
+            val targetModule = ModuleManager.find { it.name.equals(name, ignoreCase = true) }
 
-        return disallowedModules.any { dis ->
-            val cleanDis = dis.replace(" ", "").lowercase()
-            cleanMod == cleanDis ||
-            cleanMod.contains(cleanDis) ||
-            cleanDis.contains(cleanMod) ||
-            (targetModule != null && (
-                targetModule.aliases.any { it.replace(" ", "").equals(cleanDis, ignoreCase = true) } ||
-                (cleanDis == "flight" && cleanMod == "fly") ||
-                (cleanDis == "fly" && cleanMod == "flight") ||
-                (cleanDis == "aura" && cleanMod == "killaura") ||
-                (cleanDis == "killaura" && cleanMod == "aura") ||
-                (cleanDis == "jesus" && cleanMod == "waterspeed")
-            ))
+            disallowedModules.any { dis ->
+                val cleanDis = dis.replace(" ", "").lowercase()
+                cleanMod == cleanDis ||
+                cleanMod.contains(cleanDis) ||
+                cleanDis.contains(cleanMod) ||
+                (targetModule != null && (
+                    targetModule.aliases.any { it.replace(" ", "").equals(cleanDis, ignoreCase = true) } ||
+                    (cleanDis == "flight" && cleanMod == "fly") ||
+                    (cleanDis == "fly" && cleanMod == "flight") ||
+                    (cleanDis == "aura" && cleanMod == "killaura") ||
+                    (cleanDis == "killaura" && cleanMod == "aura") ||
+                    (cleanDis == "jesus" && cleanMod == "waterspeed")
+                ))
+            }
         }
     }
 
@@ -68,6 +71,7 @@ object ModuleRestrictionManager {
         this.isAccountAdmin = admin
         disallowedModules.clear()
         disallowedModules.addAll(modules)
+        checkCache.clear()
 
         if (banned) {
             logger.warn("Account is banned from server services.")
