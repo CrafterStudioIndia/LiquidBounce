@@ -43,9 +43,18 @@
 
     const CATALOG_CAPES = [
         { id: "1", name: "Liquid Gold", desc: "Classic 64x32 gilded client cape with crest", resolution: "Standard 64x32", color: "#f5be23" },
+        { id: "cape-liquid", name: "Liquid Exclusive", desc: "Signature HD royal client cloak with Liquid crest", resolution: "HD 128x64", color: "#0ea5e9" },
+        { id: "cape-neon-liquid", name: "Neon Liquid", desc: "Luminescent neon cyan cybernetic cloak", resolution: "HD 128x64", color: "#06b6d4" },
         { id: "2", name: "Cosmic Nebula", desc: "High Definition cosmic celestial interstellar cloak", resolution: "HD 128x64", color: "#8b5cf6" },
         { id: "3", name: "Corvus Midnight", desc: "High Definition midnight covert raven plumage", resolution: "HD 128x64", color: "#38bdf8" },
-        { id: "4", name: "Emerald Matrix", desc: "High Definition cybernetic matrix crystal lattice", resolution: "HD 128x64", color: "#10b981" }
+        { id: "4", name: "Emerald Matrix", desc: "High Definition cybernetic matrix crystal lattice", resolution: "HD 128x64", color: "#10b981" },
+        { id: "cape-autumn-breeze", name: "Autumn Breeze", desc: "Golden foliage autumnal twilight cloak", resolution: "HD 128x64", color: "#f97316" },
+        { id: "cape-angel-wings", name: "Angel Wings", desc: "Seraphic feathered angelic heraldic cape", resolution: "HD 128x64", color: "#e0e7ff" },
+        { id: "cape-butterfly", name: "Monarch Butterfly", desc: "Vibrant stained glass butterfly wing cape", resolution: "HD 128x64", color: "#3b82f6" },
+        { id: "cape-end-portal", name: "End Portal", desc: "Starry void interdimensional galactic cloak", resolution: "HD 128x64", color: "#a855f7" },
+        { id: "cape-fire", name: "Inferno Flame", desc: "Raging magma volcanic blazing cape", resolution: "HD 128x64", color: "#ef4444" },
+        { id: "cape-heart", name: "Floating Hearts", desc: "Charming sweet pastel heart constellation", resolution: "HD 128x64", color: "#ec4899" },
+        { id: "cape-duck", name: "Duckling", desc: "Playful cheerful bright yellow duck cape", resolution: "Standard 64x32", color: "#eab308" }
     ];
 
     let cosmeticsState: ClientCosmeticsState = {
@@ -54,40 +63,97 @@
         headwear: { style: "", primary: 0xF2C14E, secondary: 0xD7263D, lift: 0, glow: 0.5 }
     };
 
+    let selectedPet: string = "";
     let loading = false;
 
     const AURAS = [
-        { id: "", name: "None", desc: "No aura" },
-        { id: "orbit", name: "Orbit", desc: "Quad-orbital precession motes" },
+        { id: "", name: "None", desc: "No aura effect" },
+        { id: "aura-liquid-sigil", name: "Liquid Sigil", desc: "Signature Liquid cyan energy sigil" },
+        { id: "aura-autumn-breeze", name: "Autumn Breeze", desc: "Swirling golden autumn motes" },
+        { id: "aura-inferno", name: "Inferno Flame", desc: "Blazing cyclonic volcanic flames" },
         { id: "halo", name: "Crown Halo", desc: "Dual ring with diamond stars" },
-        { id: "embers", name: "Embers", desc: "Vortex cyclonic rising embers" },
+        { id: "orbit", name: "Celestial Orbit", desc: "Quad-orbital precession motes" },
+        { id: "purple_lightning", name: "Purple Lightning", desc: "Electric crackling storm aura" },
+        { id: "portal", name: "End Portal", desc: "Interdimensional void vortex" },
+        { id: "embers", name: "Volcanic Embers", desc: "Vortex rising cinder embers" },
         { id: "rings", name: "Planetary Rings", desc: "Gyroscopic planetary rings" },
         { id: "spiral", name: "Triple Spiral", desc: "Ascending triple-helix energy" },
         { id: "drift", name: "Ether Drift", desc: "Floating harmonic motes" },
-        { id: "prism", name: "Prism", desc: "Spectral floating crystals" }
+        { id: "prism", name: "Spectral Prism", desc: "Prismatic floating crystals" },
+        { id: "aura-heart", name: "Floating Hearts", desc: "Ascending harmonic heart particles" },
+        { id: "aura-broken-hearts", name: "Broken Hearts", desc: "Abyssal shattered heart drift" },
+        { id: "aura-blood-rain", name: "Blood Rain", desc: "Crimson atmospheric precipitation" },
+        { id: "aura-bat", name: "Bat Swarm", desc: "Nocturnal swirling shadow bats" },
+        { id: "aura-bubble", name: "Bubble Motes", desc: "Aquatic buoyant air spheres" },
+        { id: "aura-fish", name: "Fish Swarm", desc: "Deep sea orbital swimming fish" },
+        { id: "aura-candy", name: "Sweet Candy", desc: "Confectionery festive drift" },
+        { id: "aura-candle", name: "Mystic Candle", desc: "Enchanted levitating candlelight" },
+        { id: "aura-halloween-particle", name: "Halloween", desc: "Spooky spectral phantom motes" }
     ];
 
     const WINGS = [
         { id: "", name: "None", desc: "No wings" },
-        { id: "angel", name: "Archangel", desc: "Multi-tiered grand feathered wings" },
-        { id: "raven", name: "Corvus", desc: "Midnight dark covert plumage" },
-        { id: "phoenix", name: "Phoenix", desc: "Solar flame-tipped feathers" },
-        { id: "demon", name: "Demon", desc: "Barbed abyssal membrane" },
+        { id: "golden-wings", name: "Golden Wings", desc: "Gilded celestial seraph plumage" },
+        { id: "wings-autumn-breeze", name: "Autumn Breeze", desc: "Radiant amber breeze wings" },
+        { id: "wings-angel", name: "Angel Wings", desc: "Multi-tiered grand feathered wings" },
+        { id: "wings-baby-neon-dragon", name: "Baby Neon Dragon", desc: "Luminescent cyan cyber drake wings" },
+        { id: "wings-baby-white-dragon", name: "Baby White Dragon", desc: "Pure pearl white dragon wings" },
+        { id: "wings-fiery-dragon", name: "Fiery Dragon", desc: "Incandescent blaze dragon wings" },
+        { id: "wings-ghost-dragon", name: "Ghost Dragon", desc: "Ethereal translucent phantom wings" },
+        { id: "wings-pumpkin", name: "Pumpkin Wings", desc: "Halloween amber carved wings" },
+        { id: "wings-skeleton", name: "Skeleton Wings", desc: "Chiseled articulated bone wings" },
+        { id: "wings-butterfly", name: "Monarch Butterfly", desc: "Elongated stained-glass monarch wings" },
+        { id: "phoenix", name: "Solar Phoenix", desc: "Solar flame-tipped feathers" },
+        { id: "demon", name: "Abyssal Demon", desc: "Barbed abyssal membrane" },
         { id: "dragon", name: "Ender Drake", desc: "Massive articulated dragon wings" },
-        { id: "bat", name: "Bat", desc: "Nocturnal leather membrane" },
-        { id: "butterfly", name: "Swallowtail", desc: "Elongated monarch tails" },
-        { id: "fairy", name: "Fairy", desc: "Gossamer lattice leaf wings" },
-        { id: "crystal", name: "Crystal", desc: "Prismatic chiseled crystal blades" },
+        { id: "raven", name: "Corvus Raven", desc: "Midnight dark covert plumage" },
+        { id: "bat", name: "Nocturnal Bat", desc: "Nocturnal leather membrane" },
+        { id: "fairy", name: "Ether Fairy", desc: "Gossamer lattice fairy wings" },
+        { id: "crystal", name: "Prismatic Crystal", desc: "Prismatic chiseled crystal blades" },
         { id: "mech", name: "Cyber Mech", desc: "Hydraulic thrust vectoring fins" }
     ];
 
     const HEADWEAR = [
         { id: "", name: "None", desc: "No hat" },
-        { id: "tophat", name: "Top Hat", desc: "Formal velvet hat with satin band" },
+        { id: "hat-liquid-cap", name: "Liquid Cap", desc: "Signature Liquid curved brim cap" },
+        { id: "hat-liquid-headband", name: "Liquid Headband", desc: "Athletic cyan Liquid sigil band" },
+        { id: "golden-halo", name: "Golden Halo", desc: "Floating gilded celestial halo" },
         { id: "crown", name: "Royal Crown", desc: "Gilded four-point royal crown" },
-        { id: "beanie", name: "Beanie", desc: "Ribbed knit beanie with pom-pom" },
-        { id: "horns", name: "Demon Horns", desc: "Curved demon horns with tips" },
-        { id: "wizard", name: "Wizard Hat", desc: "Mystic pointed starry hat" }
+        { id: "hat-victorian-crown", name: "Victorian Crown", desc: "Ornate silver filigree tiara" },
+        { id: "hat-fire-crown", name: "Fire Crown", desc: "Flame-crested solar coronal crown" },
+        { id: "hat-goat-horns", name: "Goat Horns", desc: "Curved ivory highland goat horns" },
+        { id: "hat-shadow-horns", name: "Shadow Horns", desc: "Midnight demonic shadow horns" },
+        { id: "horns", name: "Demon Horns", desc: "Curved crimson demon horns" },
+        { id: "tophat", name: "Top Hat", desc: "Formal velvet top hat with satin band" },
+        { id: "hat-monocle", name: "Monocle", desc: "Aristocratic gilded glass eye-piece" },
+        { id: "hat-bucket", name: "Bucket Hat", desc: "Streetwear stitched canvas bucket hat" },
+        { id: "hat-straw", name: "Straw Hat", desc: "Woven sun farmer straw hat" },
+        { id: "hat-bunny", name: "Bunny Ears", desc: "Soft pastel bunny ear headband" },
+        { id: "hat-pumpkin-head", name: "Pumpkin Head", desc: "Carved jack-o'-lantern headwear" },
+        { id: "beanie", name: "Warm Beanie", desc: "Ribbed knit beanie with pom-pom" },
+        { id: "hat-orange-wool", name: "Orange Wool", desc: "Warm spun orange wool toque" },
+        { id: "hat-fiery-headband", name: "Fiery Headband", desc: "Blazing flame ember headband" },
+        { id: "hat-butterfly-halo", name: "Butterfly Halo", desc: "Fluttering celestial butterfly aura" },
+        { id: "wizard", name: "Wizard Hat", desc: "Mystic pointed starry hat" },
+        { id: "witch_hat", name: "Witch Hat", desc: "Midnight violet brewmasters hat" },
+        { id: "santa_hat", name: "Santa Hat", desc: "Crimson velvet holiday fleece cap" },
+        { id: "cat_ears", name: "Cat Ears", desc: "Anime feline ears with pink lining" }
+    ];
+
+    const PETS = [
+        { id: "", name: "None", desc: "No companion pet" },
+        { id: "pet-dragon", name: "Baby Dragon", desc: "Miniature hovering dragon companion" },
+        { id: "pet-black-cat", name: "Black Cat", desc: "Playful sleek midnight feline" },
+        { id: "pet-butterfly", name: "Butterfly", desc: "Graceful floating monarch butterfly" },
+        { id: "pet-crow", name: "Crow", desc: "Intelligent sentinel raven companion" },
+        { id: "pet-duck", name: "Duck", desc: "Cheerful yellow waterfowl pet" },
+        { id: "pet-duckling", name: "Duckling", desc: "Tiny buoyant baby duckling" },
+        { id: "pet-fish", name: "Swimming Fish", desc: "Aquatic hovering tropical fish" },
+        { id: "pet-ghost", name: "Spooky Ghost", desc: "Gentle floating ethereal phantom" },
+        { id: "pet-herobrine", name: "Mini Herobrine", desc: "Legendary white-eyed mini avatar" },
+        { id: "pet-koala", name: "Koala", desc: "Cozy eucalyptus branch companion" },
+        { id: "pet-shark", name: "Shark", desc: "Fierce hovering aerial shark" },
+        { id: "pet-skeleton", name: "Skeleton", desc: "Chiseled articulated skeleton buddy" }
     ];
 
     async function loadData() {
@@ -305,6 +371,15 @@
         }
     }
 
+    async function updatePet(styleId: string) {
+        selectedPet = styleId;
+        try {
+            await setClientCosmetic("pet" as any, styleId, 0x0EA5E9, 0xFFFFFF, 0, 0.5);
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
     function hexToNumber(hex: string): number {
         return parseInt(hex.replace("#", ""), 16) || 0;
     }
@@ -507,6 +582,28 @@
                         {/each}
                     </div>
                 </div>
+
+                <!-- Companion Pets Section -->
+                <div class="cosmetic-group">
+                    <div class="group-title">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                        </svg>
+                        Companion Pets
+                    </div>
+                    <div class="items-grid">
+                        {#each PETS as pet (pet.id)}
+                            <button
+                                class="cosmetic-card"
+                                class:selected={selectedPet === pet.id}
+                                on:click={() => updatePet(pet.id)}
+                            >
+                                <div class="card-name">{pet.name}</div>
+                                <div class="card-desc">{pet.desc}</div>
+                            </button>
+                        {/each}
+                    </div>
+                </div>
             </div>
         {:else if activeTab === "capes"}
             <div class="capes-content">
@@ -591,13 +688,13 @@
         display: flex;
         flex-direction: column;
         gap: 16px;
-        min-width: 520px;
-        max-width: 600px;
+        min-width: 880px;
+        max-width: 980px;
         transition: max-width 0.2s ease, min-width 0.2s ease;
 
         &.wide {
-            min-width: 760px;
-            max-width: 820px;
+            min-width: 980px;
+            max-width: 1080px;
         }
     }
 
@@ -818,10 +915,10 @@
     .cosmetics-content {
         display: flex;
         flex-direction: column;
-        gap: 16px;
-        max-height: 380px;
+        gap: 18px;
+        max-height: 560px;
         overflow-y: auto;
-        padding-right: 4px;
+        padding-right: 6px;
     }
 
     .cosmetic-group {
@@ -841,8 +938,8 @@
 
     .items-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-        gap: 8px;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 10px;
     }
 
     .cosmetic-card {
@@ -924,9 +1021,9 @@
         display: flex;
         flex-direction: column;
         gap: 14px;
-        max-height: 400px;
+        max-height: 560px;
         overflow-y: auto;
-        padding-right: 4px;
+        padding-right: 6px;
     }
 
     .capes-grid {

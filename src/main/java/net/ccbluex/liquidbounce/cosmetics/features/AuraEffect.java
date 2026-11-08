@@ -29,15 +29,59 @@ public final class AuraEffect {
 
     private AuraEffect() {}
 
+    public static String normalizeAura(String id) {
+        if (id == null) return "orbit";
+        String s = id.toLowerCase(Locale.ROOT).replace('_', '-').trim();
+        if (s.contains("liquid") || s.contains("sigil") || s.contains("halo")) return "halo";
+        if (s.contains("inferno") || s.contains("fire") || s.contains("flame") || s.contains("ember")) return "embers";
+        if (s.contains("ring") || s.contains("portal") || s.contains("particle") || s.contains("lightning") || s.contains("purple")) return "rings";
+        if (s.contains("spiral") || s.contains("candy") || s.contains("candle")) return "spiral";
+        if (s.contains("drift") || s.contains("bubble") || s.contains("breeze") || s.contains("fish") || s.contains("bat")) return "drift";
+        if (s.contains("prism") || s.contains("heart") || s.contains("blood") || s.contains("rain")) return "prism";
+        return "orbit";
+    }
+
+    private static int resolveGlow(String rawId, int explicitColor) {
+        if (explicitColor != 0) return CosmeticMesh.toOpaque(explicitColor);
+        String s = rawId.toLowerCase(Locale.ROOT);
+        if (s.contains("inferno") || s.contains("fire")) return 0xFF4500;
+        if (s.contains("liquid") || s.contains("sigil")) return 0x0EA5E9;
+        if (s.contains("purple") || s.contains("lightning") || s.contains("portal")) return 0xA855F7;
+        if (s.contains("heart") || s.contains("blood")) return 0xEF4444;
+        if (s.contains("breeze") || s.contains("autumn")) return 0xFB923C;
+        if (s.contains("bubble") || s.contains("fish")) return 0x38BDF8;
+        if (s.contains("candy")) return 0xEC4899;
+        if (s.contains("ember")) return 0xFF7A2F;
+        if (s.contains("ring")) return 0xB794F6;
+        if (s.contains("spiral")) return 0x6EE7B7;
+        if (s.contains("prism")) return 0xFF6B9A;
+        if (s.contains("drift")) return 0x8FD3FF;
+        if (s.contains("halo")) return 0xFFE08A;
+        return 0x9BE7FF;
+    }
+
+    private static int resolveCore(String rawId, int explicitColor) {
+        if (explicitColor != 0) return CosmeticMesh.toOpaque(explicitColor);
+        String s = rawId.toLowerCase(Locale.ROOT);
+        if (s.contains("inferno") || s.contains("fire") || s.contains("autumn") || s.contains("breeze")) return 0xFFD700;
+        if (s.contains("liquid") || s.contains("sigil")) return 0x38BDF8;
+        if (s.contains("purple") || s.contains("lightning")) return 0xE9D5FF;
+        if (s.contains("heart") || s.contains("blood")) return 0xFCA5A5;
+        if (s.contains("bubble") || s.contains("fish")) return 0xE0F2FE;
+        return 0xFFFFFF;
+    }
+
     public static void generateMesh(CosmeticMesh mesh, OutfitConfig outfit, float timeSeconds) {
         if (outfit.isEmpty()) {
             return;
         }
 
-        int glow = CosmeticMesh.toOpaque(outfit.primaryColor());
-        int core = CosmeticMesh.toOpaque(outfit.secondaryColor());
+        String rawId = outfit.styleId() != null ? outfit.styleId() : "";
+        int glow = resolveGlow(rawId, outfit.primaryColor());
+        int core = resolveCore(rawId, outfit.secondaryColor());
 
-        switch (outfit.styleId().toLowerCase(Locale.ROOT)) {
+        String norm = normalizeAura(rawId);
+        switch (norm) {
             case "orbit" -> buildOrbit(mesh, glow, core, timeSeconds);
             case "halo" -> buildHalo(mesh, glow, core, timeSeconds);
             case "embers" -> buildEmbers(mesh, glow, core, timeSeconds);
@@ -45,7 +89,7 @@ public final class AuraEffect {
             case "spiral" -> buildSpiral(mesh, glow, core, timeSeconds);
             case "drift" -> buildDrift(mesh, glow, core, core, timeSeconds, false);
             case "prism" -> buildDrift(mesh, 0, glow, core, timeSeconds, true);
-            default -> {}
+            default -> buildOrbit(mesh, glow, core, timeSeconds);
         }
         mesh.setPen(CosmeticMesh.SOLID);
     }

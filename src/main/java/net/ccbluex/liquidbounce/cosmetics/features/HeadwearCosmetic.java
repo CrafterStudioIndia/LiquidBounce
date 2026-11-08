@@ -31,21 +31,68 @@ public final class HeadwearCosmetic {
 
     private static float glowIntensity = 1.0f;
 
+    public static String normalizeHeadwear(String id) {
+        if (id == null) return "";
+        String s = id.toLowerCase(Locale.ROOT).replace('_', '-').trim();
+        if (s.contains("halo")) return "halo";
+        if (s.contains("crown")) return "crown";
+        if (s.contains("tophat") || s.contains("top-hat") || s.contains("monocle")) return "tophat";
+        if (s.contains("horn")) return "horns";
+        if (s.contains("wizard") || s.contains("witch") || s.contains("bunny") || s.contains("pumpkin") || s.contains("santa") || s.contains("cat-ear") || s.contains("catear")) return "wizard";
+        if (s.contains("cap") || s.contains("beanie") || s.contains("bucket") || s.contains("headband") || s.contains("straw") || s.contains("wool")) return "beanie";
+        return s;
+    }
+
+    private static int resolvePrimary(String rawId, int explicitColor) {
+        if (explicitColor != 0) return CosmeticMesh.toOpaque(explicitColor);
+        String s = rawId.toLowerCase(Locale.ROOT);
+        if (s.contains("liquid") || s.contains("cyan") || s.contains("breeze")) return 0x0EA5E9;
+        if (s.contains("gold") || s.contains("halo") || s.contains("crown")) return 0xF2C14E;
+        if (s.contains("fire") || s.contains("inferno") || s.contains("fiery")) return 0xFF5722;
+        if (s.contains("shadow") || s.contains("dark") || s.contains("midnight")) return 0x1E1E2E;
+        if (s.contains("pumpkin") || s.contains("orange")) return 0xEA580C;
+        if (s.contains("straw")) return 0xFDE047;
+        if (s.contains("bunny") || s.contains("heart") || s.contains("pink")) return 0xF472B6;
+        if (s.contains("witch") || s.contains("wizard")) return 0x4C1D95;
+        if (s.contains("santa")) return 0xDC2626;
+        if (s.contains("horn")) return 0x2B1B17;
+        return 0xF2C14E;
+    }
+
+    private static int resolveSecondary(String rawId, int explicitColor) {
+        if (explicitColor != 0) return CosmeticMesh.toOpaque(explicitColor);
+        String s = rawId.toLowerCase(Locale.ROOT);
+        if (s.contains("liquid") || s.contains("cyan")) return 0x38BDF8;
+        if (s.contains("fire") || s.contains("fiery")) return 0xFFD24A;
+        if (s.contains("crown")) return 0xD7263D;
+        if (s.contains("santa") || s.contains("bunny")) return 0xFFFFFF;
+        if (s.contains("horn")) return 0xFF4A2E;
+        if (s.contains("tophat") || s.contains("top-hat")) return 0x8E2A35;
+        return 0xD7263D;
+    }
+
     public static void generateMesh(CosmeticMesh mesh, OutfitConfig outfit, float timeSeconds) {
-        int a = CosmeticMesh.toOpaque(outfit.primaryColor());
-        int b = CosmeticMesh.toOpaque(outfit.secondaryColor());
+        String rawId = outfit.styleId() != null ? outfit.styleId() : "";
+        if (rawId.isEmpty()) {
+            return;
+        }
+
+        int a = resolvePrimary(rawId, outfit.primaryColor());
+        int b = resolveSecondary(rawId, outfit.secondaryColor());
         glowIntensity = outfit.glowFactor() * 2.0f;
 
         mesh.push();
         mesh.translate(0, -outfit.verticalOffset(), 0);
 
-        switch (outfit.styleId().toLowerCase(Locale.ROOT)) {
+        String norm = normalizeHeadwear(rawId);
+        switch (norm) {
             case "crown" -> buildCrown(mesh, a, b, timeSeconds);
+            case "halo" -> buildHalo(mesh, a, b, timeSeconds);
             case "tophat" -> buildTopHat(mesh, a, b, timeSeconds);
             case "beanie" -> buildBeanie(mesh, a, b, timeSeconds);
             case "horns" -> buildHorns(mesh, a, b, timeSeconds);
             case "wizard" -> buildWizard(mesh, a, b, timeSeconds);
-            default -> {}
+            default -> buildCrown(mesh, a, b, timeSeconds);
         }
 
         mesh.pop();
@@ -110,6 +157,23 @@ public final class HeadwearCosmetic {
             emitGem(mesh, 0, -10.5f, -r - 0.2f, 0.45f, gem, computePulse(time, side * 0.7f));
             mesh.pop();
         }
+    }
+
+    private static void buildHalo(CosmeticMesh mesh, int gold, int core, float time) {
+        float y = -14.5f + 0.4f * (float) Math.sin(time * 2.0f);
+        mesh.setPen(CosmeticMesh.BRIGHT);
+        float radius = 5.2f;
+        int segments = 24;
+        for (int i = 0; i < segments; i++) {
+            float a0 = (float) (i * 2 * Math.PI / segments);
+            float a1 = (float) ((i + 1) * 2 * Math.PI / segments);
+            float x0 = radius * (float) Math.cos(a0);
+            float z0 = radius * (float) Math.sin(a0);
+            float x1 = radius * (float) Math.cos(a1);
+            float z1 = radius * (float) Math.sin(a1);
+            emitSolidBlock(mesh, x0 - 0.4f, y - 0.35f, z0 - 0.4f, x1 + 0.4f, y + 0.35f, z1 + 0.4f, gold);
+        }
+        emitHalo(mesh, 0, y, 0, radius * 1.5f, core != 0 ? core : gold, 0.7f + 0.3f * (float) Math.sin(time * 3.0f));
     }
 
     private static void buildTopHat(CosmeticMesh mesh, int body, int band, float time) {

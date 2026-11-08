@@ -56,8 +56,24 @@ public final class WingCosmetic {
 
     private WingCosmetic() {}
 
+    public static String normalizeWing(String id) {
+        if (id == null) return "angel";
+        String s = id.toLowerCase(java.util.Locale.ROOT).replace('_', '-').trim();
+        if (s.contains("phoenix") || s.contains("fiery")) return "phoenix";
+        if (s.contains("demon") || s.contains("skeleton")) return "demon";
+        if (s.contains("dragon") || s.contains("drake")) return "dragon";
+        if (s.contains("butterfly")) return "butterfly";
+        if (s.contains("fairy") || s.contains("breeze")) return "fairy";
+        if (s.contains("crystal")) return "crystal";
+        if (s.contains("mech") || s.contains("cyber")) return "mech";
+        if (s.contains("bat")) return "bat";
+        if (s.contains("raven") || s.contains("crow")) return "raven";
+        return "angel";
+    }
+
     private static WingGeometry queryGeometry(String style) {
-        return switch (style) {
+        String norm = normalizeWing(style);
+        return switch (norm) {
             case "angel", "raven" -> new WingGeometry(0.64f, 0.72f, 6, 14, 0.62f, 0.22f, 1.0f, 0.12f);
             case "phoenix" -> new WingGeometry(0.64f, 0.72f, 6, 14, 0.60f, 0.20f, 1.15f, 0.12f);
             case "demon", "bat" -> new WingGeometry(0.62f, 0.52f, 5, 13, 0.64f, 0.24f, 1.0f, 0.10f);
@@ -66,7 +82,7 @@ public final class WingCosmetic {
             case "fairy" -> new WingGeometry(0.68f, 0.38f, 14, 30, 0.52f, 0.28f, 2.5f, 0.05f);
             case "crystal" -> new WingGeometry(0.82f, 0.92f, 10, 30, 0.56f, 0.30f, 0.75f, 0.08f);
             case "mech" -> new WingGeometry(0.62f, 0.95f, 4, 13, 0.62f, 0.22f, 0.82f, 0.12f);
-            default -> null;
+            default -> new WingGeometry(0.64f, 0.72f, 6, 14, 0.62f, 0.22f, 1.0f, 0.12f);
         };
     }
 
@@ -75,14 +91,17 @@ public final class WingCosmetic {
             return;
         }
 
-        String style = outfit.styleId();
-        WingGeometry geometry = queryGeometry(style);
+        String rawStyle = outfit.styleId() != null ? outfit.styleId() : "";
+        String normStyle = normalizeWing(rawStyle);
+        WingGeometry geometry = queryGeometry(normStyle);
         if (geometry == null) {
-            return;
+            geometry = queryGeometry("angel");
         }
 
-        CosmeticPixelBuffer buffer = PIXEL_BUFFERS.computeIfAbsent(style, WingCosmetic::generateBuffer);
-        setupPalette(style, CosmeticMesh.toOpaque(outfit.primaryColor()), CosmeticMesh.toOpaque(outfit.secondaryColor()));
+        CosmeticPixelBuffer buffer = PIXEL_BUFFERS.computeIfAbsent(normStyle, WingCosmetic::generateBuffer);
+        int prim = outfit.primaryColor() != 0 ? CosmeticMesh.toOpaque(outfit.primaryColor()) : 0;
+        int sec = outfit.secondaryColor() != 0 ? CosmeticMesh.toOpaque(outfit.secondaryColor()) : 0;
+        setupPalette(rawStyle, prim, sec);
 
         float beat = animationPhase * geometry.beatRate;
         float wave = (float) Math.sin(beat);
@@ -117,6 +136,41 @@ public final class WingCosmetic {
     }
 
     private static void setupPalette(String style, int primary, int secondary) {
+        if (primary == 0) {
+            String s = style.toLowerCase(java.util.Locale.ROOT);
+            if (s.contains("gold")) {
+                primary = 0xF5BE23;
+                secondary = 0xFFF3C4;
+            } else if (s.contains("autumn") || s.contains("breeze")) {
+                primary = 0xFB923C;
+                secondary = 0xFDE047;
+            } else if (s.contains("neon")) {
+                primary = 0x06B6D4;
+                secondary = 0x22D3EE;
+            } else if (s.contains("fiery") || s.contains("phoenix")) {
+                primary = 0xFF5A1F;
+                secondary = 0xFFD24A;
+            } else if (s.contains("ghost") || s.contains("white")) {
+                primary = 0xF1F5F9;
+                secondary = 0x94A3B8;
+            } else if (s.contains("pumpkin")) {
+                primary = 0xEA580C;
+                secondary = 0x78350F;
+            } else if (s.contains("demon") || s.contains("skeleton")) {
+                primary = 0x5A0F16;
+                secondary = 0x1A0B0D;
+            } else if (s.contains("dragon")) {
+                primary = 0x2D6A4F;
+                secondary = 0x173A2B;
+            } else if (s.contains("butterfly")) {
+                primary = 0x3A86FF;
+                secondary = 0x0B0B12;
+            } else {
+                primary = 0xF7F7FA;
+                secondary = 0xC9D6EA;
+            }
+        }
+
         for (int i = 0; i < PENS.length; i++) {
             PENS[i] = CosmeticMesh.SOLID;
         }
