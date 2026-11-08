@@ -23,7 +23,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import net.minecraft.client.Minecraft;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
@@ -52,9 +51,13 @@ public final class PlayerWardrobe {
     private PlayerWardrobe() {}
 
     private static File getConfigFile() {
-        Minecraft mc = Minecraft.getInstance();
-        File gameDir = (mc != null && mc.gameDirectory != null) ? mc.gameDirectory : new File(".");
-        File dir = new File(gameDir, "LiquidBounce");
+        File dir = null;
+        try {
+            dir = net.ccbluex.liquidbounce.config.ConfigSystem.INSTANCE.getRootFolder();
+        } catch (Throwable ignored) {}
+        if (dir == null) {
+            dir = new File("LiquidBounce");
+        }
         if (!dir.exists()) {
             dir.mkdirs();
         }
